@@ -3,87 +3,104 @@ require(tidyverse)
 
 # load data
 data(synth.data,package = "Synth")
-
-
-
-
-
 dat <- as_tibble(synth.data)
 
-.formula = Y ~ X1 + X2 + X3 | year + name
-.data = dat
-i_unit = "treated.region" # Treated unit (all other units are considered the control units)
-i_time = 1988 # When treatment is received
-restrict_time = NA # Provide a restricted time period to aggregate observations.
-agg_methods = NA # Provide as a list different aggregation methods, e.g. list(X1 = mean(X1), X2 = sum(X2)), default behavior is the mean
+#'
+#' TO DOs:
+#'
+#' - Overload the print method so that a recipe style output is displayed.
+#'
+#' - Build **_inferential_** and robustness methods
+#'
+#' - `grab_comparison_table()`: comparison of coefficients in the synthetic and
+#' observed unit
+#'
+#'
+#'
 
-# synthetic_control() [X]
-# fit_weights() [X]
-# generate_control() [X]
 
-
-
-# Main pipeline/implementation
-out <-
+out =
 
   dat %>%
 
-  filter(year >= 1984 & year <= 1996) %>%
-  filter(unit.num %in% c(2, 7, 13, 17, 29, 32, 38)) %>%
-  synthetic_control(Y ~ X1 + X2 + X3 | year + name,
+  # Initial specification of the method
+  synthetic_control(outcome = Y,
+                    unit = name,
+                    time = year,
                     i_unit = "treated.region",
-                    i_time = 1990) %>%
-  fit_weights() %>%
+                    i_time = 1991) %>%
+
+  # Generate the aggregate predictors used to generate the weights
+  generate_predictors(time_window=1984:1989,
+                      X1 = mean(X1, na.rm = T),
+                      X2 = mean(X2, na.rm = T),
+                      X3 = mean(X3, na.rm = T)) %>%
+  generate_predictors(time_window=1980, y_1980 = Y) %>%
+  generate_predictors(time_window=1985, y_1985 = Y) %>%
+  generate_predictors(time_window=1991, y_1991 = Y) %>%
+
+  # Generate the fitted weights for the synthetic control
+  generate_weights(time_window = 1984:1990) %>%
+
+  # Generate the synthetic control
   generate_control()
 
 
 # plots
-out %>% plot_trends()
+out %>% plot_trends(time_window = 1984:1996) + ylim(80,160)
+out %>% plot_differences(time_window = 1984:1996) + ylim(-25,25)
 out %>% plot_weights()
 
 
 
-# This
-synthetic_control(Y ~ X1 + X2 + X3 | year + name,
-                  i_unit = "treated.region",
-                  i_time = 1990,
-                  predictor_window = 1984:1989,
-                  optimization_window = 1984:1990)
-# Default behavior will be to use the entire pre-treatment time period in the
-# data.
 
-# and make the aggregate function work for real.
+# Generate Placebos -------------------------------------------------------
 
+pipeline <- function(data,unit){
 
+  # Initial specification of the method
+  synthetic_control(data=data,
+                    outcome = Y,
+                    unit = name,
+                    time = year,
+                    i_unit = unit,
+                    i_time = 1991) %>%
 
+    # Generate the aggregate predictors used to generate the weights
+    generate_predictors(time_window=1984:1989,
+                        X1 = mean(X1, na.rm = T),
+                        X2 = mean(X2, na.rm = T),
+                        X3 = mean(X3, na.rm = T)) %>%
+    generate_predictors(time_window=1980, y_1980 = Y) %>%
+    generate_predictors(time_window=1985, y_1985 = Y) %>%
+    generate_predictors(time_window=1991, y_1991 = Y) %>%
 
-# plots
-out %>% plot_trends() + ylim(80,160)
-out %>% plot_weights()
+    # Generate the fitted weights for the synthetic control
+    generate_weights(time_window = 1984:1990) %>%
 
+    # Generate the synthetic control
+    generate_control()
 
-dat %>%
-  mutate(treated = ifelse(year >= 1990 & name == "treated.region",1,0)) %>%
-  group_by(treated,name,year) %>%
-  mutate(y_mean = mean(Y)) %>%
-  ungroup %>%
-  mutate(y_1980 = ifelse(year==1980,y_mean,NA),
-         y_1985 = ifelse(year==1985,y_mean,NA),
-         y_1991 = ifelse(year==1991,y_mean,NA)) %>%
-  select(-y_mean,-treated)
-
-
-
-dat %>%
-  filter(year==1980) %>%
-  mutate(case_when())
+}
 
 
-dat %>%
-  filter(year<=1985) %>%
-  filter(unit.num==2) %>%
-  pluck("Y") %>%
-  mean(.)
+
+
+pipeline(dat,i_unit="treated.region")
+
+
+out$.outcome[[1]]
+
+generate_placebos <- function(data = NULL,
+                              unit = NULL,
+                              i_unit = NULL,
+                              synth_pipeline = NULL){
+  pipeline()
+}
+
+
+
+
 
 
 
@@ -103,11 +120,11 @@ dataprep.out<-
     dependent = "Y",
     unit.variable = "unit.num",
     time.variable = "year",
-    # special.predictors = list(
-    #   list("Y", 1991, "mean"),
-    #   list("Y", 1985, "mean"),
-    #   list("Y", 1980, "mean")
-    # ),
+    special.predictors = list(
+      list("Y", 1991, "mean"),
+      list("Y", 1985, "mean"),
+      list("Y", 1980, "mean")
+    ),
     treatment.identifier = 7,
     controls.identifier = c(29, 2, 13, 17, 32, 38),
     time.predictors.prior = c(1984:1989),
