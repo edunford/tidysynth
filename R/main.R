@@ -635,7 +635,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
   if (prune){
 
     # Gather significance field
-    sig_data = data %>% grab_signficance()
+    sig_data = data %>% grab_signficance(time_window = time_window)
 
     # Treated units Pre-Period RMSPE
     thres <-
@@ -959,23 +959,16 @@ grab_signficance <- function(data,time_window = NULL){
 
   # Grab meta data
   trt_time <- data$.meta[[1]]$treatment_time
+  time_index <- data$.meta[[1]]$time_index
 
   # If no time window is specified for the table, calculate the entire series
   if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
 
-  # Grad unit identifiers
-  unit_ids <-
-    data %>%
-    dplyr::filter(.type=="treated") %>%
-    dplyr::select(.id,.meta) %>%
-    tidyr::unnest(cols=.meta) %>%
-    dplyr::select(.id,unit_name = treatment_unit)
-
   # Formulate the output data using the donor and treated synthetic controls
   data %>%
-    grab_synthetic_control() %>%
+    grab_synthetic_control(placebos = T) %>%
     dplyr::filter(time_unit %in% time_window) %>%
-    dplyr::group_by(.id, period = ifelse(time_unit < trt_time,"pre_rmspe","post_rmspe"))  %>%
+    dplyr::group_by(.id, period = ifelse(time_unit <= trt_time,"pre_rmspe","post_rmspe"))  %>%
     dplyr::summarize(.placebo = mean(.placebo),
                      rmspe = sqrt(sum((real_y - synth_y)^2)/n()) ) %>%
     tidyr::pivot_wider(names_from = period,values_from = rmspe) %>%
@@ -986,8 +979,7 @@ grab_signficance <- function(data,time_window = NULL){
                   fishers_exact_pvalue = rank / max(rank),
                   z_score = (rmspe_ratio-mean(rmspe_ratio))/sd(rmspe_ratio),
                   type = ifelse(.placebo==0,"Treated","Donor")) %>%
-    dplyr::left_join(.,unit_ids,by=".id") %>%
-    dplyr::select(unit_name,type,pre_rmspe,post_rmspe,dplyr::everything(),-.id,-.placebo)
+    dplyr::select(unit_name=.id,type,pre_rmspe,post_rmspe,dplyr::everything(),-.placebo)
 }
 
 
