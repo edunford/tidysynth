@@ -527,13 +527,13 @@ plot_trends <- function(data,time_window=NULL){
   # Check if .meta is in data.
   if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
 
-  # If no time window is specified for the plot, plot the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
-
   # Grab meta data
   trt_time <- data$.meta[[1]]$treatment_time[1]
   time_index <- data$.meta[[1]]$time_index[1]
   outcome_name <- data$.meta[[1]]$outcome[1]
+
+  # If no time window is specified for the plot, plot the entire series
+  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
 
   # Generate plot
   data %>%
@@ -569,14 +569,14 @@ plot_differences <- function(data,time_window=NULL){
   # Check if .meta is in data.
   if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
 
-  # If no time window is specified for the plot, plot the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
-
   # Grab meta data
   trt_time <- data$.meta[[1]]$treatment_time[1]
   time_index <- data$.meta[[1]]$time_index[1]
   treatment_unit <- data$.meta[[1]]$treatment_unit[1]
   outcome_name <- data$.meta[[1]]$outcome[1]
+
+  # If no time window is specified for the plot, plot the entire series
+  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
 
   # Generate plot
   data %>%
@@ -1000,7 +1000,7 @@ grab_signficance <- function(data,time_window = NULL){
 #' @export
 #'
 #' @examples
-grab_comparison_table <- function(data){
+grab_balance_table <- function(data){
 
   # Checks
   if(!(".meta" %in% colnames(data))){ stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
