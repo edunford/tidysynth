@@ -25,7 +25,7 @@ synthetic_control <- function(data = NULL,
     # configure the outcome for the treated unit
     trt_outcome <-
       data %>%
-      dplyr::filter(!!time < i_time & !!unit == i_unit) %>% # Pre-intervention period
+      dplyr::filter(!!time <= i_time & !!unit == i_unit) %>% # Pre-intervention period
       dplyr::select(!!time,!!unit,!!outcome) %>%
       tidyr::pivot_wider(names_from=!!unit,values_from=!!outcome) %>%
       dplyr::rename(time_unit = !!time)
@@ -33,7 +33,7 @@ synthetic_control <- function(data = NULL,
     # configure the outcome for the control units
     cnt_outcome <-
       data %>%
-      dplyr::filter(!!time < i_time & !!unit != i_unit) %>% # Pre-intervention period
+      dplyr::filter(!!time <= i_time & !!unit != i_unit) %>% # Pre-intervention period
       dplyr::select(!!time,!!unit,!!outcome) %>%
       tidyr::pivot_wider(names_from=!!unit,values_from=!!outcome) %>%
       dplyr::rename(time_unit = !!time)
@@ -79,7 +79,7 @@ synthetic_control <- function(data = NULL,
     # Placebo == unit that did not receive the treatment
     master_nest <-
       generate_nested_data(data=data, i_unit = unit_name,
-                           placebo = placebo,id=i) %>%
+                           placebo = placebo,id=unit_name) %>%
       dplyr::bind_rows(master_nest,.)
   }
 
@@ -98,7 +98,7 @@ synthetic_control <- function(data = NULL,
 #' @export
 #'
 #' @examples
-generate_predictors <- function(data,
+generate_predictor <- function(data,
                                time_window=NULL,
                                ...){
 
@@ -272,6 +272,7 @@ synth_weights <- function(data,
     dplyr::filter(time_unit %in% time_window) %>%
     dplyr::select(-time_unit) %>%
     as.matrix()
+
   control_units_outcome <- data %>%
     grab_outcomes("controls") %>%
     dplyr::filter(time_unit %in% time_window) %>%
@@ -377,7 +378,7 @@ generate_weights <-function(data,
   data_versions <- unique(data$.id)
 
   # Track progress
-  pb <- dplyr::progress_estimated(length(data_versions),min_time = 15)
+  pb <- dplyr::progress_estimated(length(data_versions),min_time = 10)
 
   # Iterate through the data versions
   master_nest <- NULL
@@ -539,15 +540,15 @@ plot_trends <- function(data,time_window=NULL){
     dplyr::filter(time_unit %in% time_window) %>%
     dplyr::rename(Synthetic= synth_y,
                   Observed= real_y) %>%
-    tidyr::gather(var,val,-time_unit) %>%
-    ggplot2::ggplot(ggplot2::aes(time_unit,val,color=var,linetype=var)) +
+    tidyr::pivot_longer(cols = c(Observed,Synthetic)) %>%
+    ggplot2::ggplot(ggplot2::aes(time_unit,value,color=name,linetype=name)) +
     ggplot2::geom_vline(xintercept = trt_time,color="black",linetype=2) +
     ggplot2::geom_line(size=1,alpha=.7) +
     ggplot2::geom_point() +
     ggplot2::scale_color_manual(values=c("grey50","#b41e7c")) +
     ggplot2::scale_linetype_manual(values=c(1,4)) +
     ggplot2::labs(color="",linetype="",y=outcome_name,x=time_index,
-                  title=paste0("Time Series of the Synthetic and Observed ",outcome_name)) +
+                  title=paste0("Time Series of the synthetic and observed ",outcome_name)) +
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.position = "bottom")
 }
@@ -631,17 +632,25 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
   # deviations of the rest of the pool, it's dropped.
   caption <- ""
   if (prune){
+
+    # Gather significance field
+    sig_data = data %>% grab_signficance()
+
+    # Treated units Pre-Period RMSPE
+    thres <-
+      sig_data %>%
+      filter(type=="Treated") %>%
+      pull(pre_rmspe)
+
+    # Only retain units that are 2 times the treated unit RMSPE.
     retain_ <-
-      plot_data %>%
-      dplyr::group_by(.id) %>%
-      dplyr::summarize(max_diff = max(diff)) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(std_max_diff = sd(max_diff) + 2) %>%
-      dplyr::filter(max_diff <= std_max_diff) %>%
-      dplyr::pull(.id)
+      sig_data %>%
+      select(unit_name,pre_rmspe) %>%
+      filter(pre_rmspe <= thres*2) %>%
+      pull(unit_name)
 
     plot_data <- plot_data %>% dplyr::filter(.id %in% retain_)
-    caption <- "Pruned cases with max values two standard deviations above the other donors."
+    caption <- "Pruned cases with pre-period RMSPE exceeding two times the treated units pre-period RMSPE."
   }
 
   # Generate plot
@@ -714,7 +723,8 @@ plot_weights <- function(.data){
 plot_rmspe_ratio <- function(data,time_window=NULL){
   data %>%
     grab_signficance(time_window=time_window) %>%
-    ggplot2::ggplot(ggplot2::aes(forcats::fct_reorder(unit_name,rmspe_ratio),
+    mutate(unit_name = forcats::fct_reorder(as.character(unit_name),rmspe_ratio)) %>%
+    ggplot2::ggplot(ggplot2::aes(unit_name,
                                  rmspe_ratio,
                                  fill=type,color=type)) +
     ggplot2::geom_col(alpha=.65) +

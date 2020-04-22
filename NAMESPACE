@@ -2,7 +2,7 @@
 
 export("%>%")
 export(generate_control)
-export(generate_predictors)
+export(generate_predictor)
 export(generate_weights)
 export(grab_comparison_table)
 export(grab_loss)

@@ -18,4 +18,9 @@ Imports:
     tibble,
     dplyr,
     ggplot2,
-    tidyr
+    tidyr,
+    forcats,
+    rlang,
+    LowRankQP,
+    rgenoud,
+    kernlab
