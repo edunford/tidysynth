@@ -20,7 +20,4 @@ Imports:
     ggplot2,
     tidyr,
     forcats,
-    rlang,
-    LowRankQP,
-    rgenoud,
-    kernlab
+    rlang

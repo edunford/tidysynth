@@ -6,11 +6,10 @@
 #' Synth works as the main engine of the `tidysynth` package. More on the method
 #' and estimation procedures can be found in (Abadie et al. 2010).
 #'
-#' @param data.prep.obj
-#' @param X1
-#' @param X0
-#' @param Z0
-#' @param Z1
+#' @param treatment_unit_covariates
+#' @param control_units_covariates
+#' @param control_units_outcome
+#' @param treatment_unit_outcome
 #' @param custom.v
 #' @param optimxmethod
 #' @param genoud
