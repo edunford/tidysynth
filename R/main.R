@@ -381,7 +381,7 @@ generate_weights <-function(data,
   pb <- dplyr::progress_estimated(length(data_versions),min_time = 10)
 
   # Iterate through the data versions
-  master_nest <- NULL
+  master_nest <- NULL; first_pass <- TRUE
   for (v in data_versions){
 
     # Track progress
@@ -408,8 +408,9 @@ generate_weights <-function(data,
     # Use the same weights on the placebos that was used on the treated unit.
     # This makes the output of the different versions comparible and greatly
     # reduces computation time.
-    if (v==1 & is.null(custom_variable_weights)){
+    if (first_pass & is.null(custom_variable_weights)){
       custom_variable_weights <- master_nest$.predictor_weights[[2]]$weight
+      first_pass <- FALSE
     }
 
   }
@@ -639,15 +640,15 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
     # Treated units Pre-Period RMSPE
     thres <-
       sig_data %>%
-      filter(type=="Treated") %>%
-      pull(pre_rmspe)
+      dplyr::filter(type=="Treated") %>%
+      dplyr::pull(pre_rmspe)
 
     # Only retain units that are 2 times the treated unit RMSPE.
     retain_ <-
       sig_data %>%
-      select(unit_name,pre_rmspe) %>%
-      filter(pre_rmspe <= thres*2) %>%
-      pull(unit_name)
+      dplyr::select(unit_name,pre_rmspe) %>%
+      dplyr::filter(pre_rmspe <= thres*2) %>%
+      dplyr::pull(unit_name)
 
     plot_data <- plot_data %>% dplyr::filter(.id %in% retain_)
     caption <- "Pruned cases with pre-period RMSPE exceeding two times the treated units pre-period RMSPE."
@@ -657,12 +658,14 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
   plot_data %>%
     ggplot2::ggplot(ggplot2::aes(time_unit,diff,group=.id,
                                  color=type_text,
-                                 alpha=type_text)) +
+                                 alpha=type_text,
+                                 size=type_text)) +
     ggplot2::geom_hline(yintercept = 0,color="black",linetype=2) +
     ggplot2::geom_vline(xintercept = trt_time,color="black",linetype=3) +
-    ggplot2::geom_line(size=1) +
+    ggplot2::geom_line() +
     ggplot2::scale_color_manual(values=c("#b41e7c","grey60")) +
     ggplot2::scale_alpha_manual(values=c(1,.4)) +
+    ggplot2::scale_size_manual(values=c(1,.5)) +
     ggplot2::labs(color="",alpha="",y=outcome_name,x=time_index,
                   title=paste0("Difference of each '",unit_index,"' in the donor pool"),
                   caption = caption) +
@@ -730,7 +733,7 @@ plot_rmspe_ratio <- function(data,time_window=NULL){
     ggplot2::geom_col(alpha=.65) +
     ggplot2::coord_flip() +
     ggplot2::geom_point() +
-    ggplot2::labs(y = "Post-Period RMSPE / Pre_Period RMSPE",x="",fill="",color="") +
+    ggplot2::labs(y = "Post-Period RMSPE / Pre-Period RMSPE",x="",fill="",color="") +
     ggplot2::scale_fill_manual(values=c("grey50","#b41e7c")) +
     ggplot2::scale_color_manual(values=c("grey50","#b41e7c")) +
     ggplot2::theme_minimal() +
