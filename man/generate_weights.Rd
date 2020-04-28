@@ -9,6 +9,7 @@ generate_weights(
   optimization_window = NULL,
   custom_variable_weights = NULL,
   include_fit = FALSE,
+  track_progress = FALSE,
   optimization_method = c("Nelder-Mead", "BFGS"),
   genoud = FALSE,
   quadopt = "ipop",
@@ -16,16 +17,204 @@ generate_weights(
   Sigf.ipop = 5,
   Bound.ipop = 10,
   verbose = FALSE,
-  track_progress = TRUE,
   ...
 )
 }
 \arguments{
-\item{...}{}
+\item{data}{nested data of type \code{synth_tbl} generated from
+\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
+information on how a \code{sythn_tbl} object is organized. In addition, a matrix
+of predictors must be prespecified using the \code{generate_predictor()}
+function. See documentation for more information on how to generate a
+predictor function.}
+
+\item{optimization_window}{the temporal window of the pre-intervention
+outcome time series to be used in the optimization task. Default behavior
+uses the entire pre-intervention time period.}
+
+\item{custom_variable_weights}{a vector of provided weights that define a
+variable's importance in the optimization task. The weights are intended to
+reflect the users prior regarding the relative significance of each
+variable. Vector must sum to one. Note that the method is significantly
+faster when a custom variable weights are provided. Default behavior
+assumes no wieghts are provided and thus must be learned from the data.}
+
+\item{include_fit}{Boolean flag, if TRUE, then the optimization output is
+included in the outputted \code{synth_tbl}.}
+
+\item{optimization_method}{string vector that specifies the optimization
+algorithms to be used. Permissable values are all optimization algorithms
+that are currently implemented in the optimx function (see this function
+for details). This list currently includes c('Nelder-Mead', 'BFGS', 'CG',
+'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
+are specified, synth will run the optimization with all chosen algorithms
+and then return the result for the best performing method. Default is
+c('Nelder-Mead','BFGS'). As an additional possibility, the user can also specify 'All' which
+means that synth will run the results over all algorithms in optimx.}
+
+\item{genoud}{Logical flag. If true, synth embarks on a two step
+optimization. In the first step, genoud, an optimization function that
+combines evolutionary algorithm methods with a derivative-based
+(quasi-Newton) method to solve difficult optimization problems, is used to
+obtain a solution. See genoud for details. In the second step, the genoud
+results are passed to the optimization algorithm(s) chosen in optimxmethod
+for a local optimization within the neighborhood of the genoud solution.
+This two step optimization procedure will require much more computing time,
+but may yield lower loss in cases where the search space is highly
+irregular.}
+
+\item{quadopt}{string vector that specifies the routine for quadratic
+optimization over w weights. possible values are "ipop" and "LowRankQP"
+(see ipop and LowRankQP for details). default is 'ipop'}
+
+\item{Margin.ipop}{setting for ipop optimization routine: how close we get to
+the constrains (see ipop for details)}
+
+\item{Sigf.ipop}{setting for ipop optimization routine: Precision (default: 7
+significant figures (see ipop for details)}
+
+\item{Bound.ipop}{setting for ipop optimization routine: Clipping bound for
+the variables (see ipop for details)}
+
+\item{verbose}{Logical flag. If TRUE then intermediate results will be shown.}
+
+\item{...}{Additional arguments to be passed to optimx and or genoud to
+adjust optimization.}
 }
 \value{
-
+\code{synth_tbl} with nested fields containing the following:
+\itemize{
+\item \code{.id}: unit id for the intervention case (this will differ when a placebo
+unit).
+\item \code{.placebo}: indicator field taking on the value of 1 if a unit is a
+placebo unit, 0 if it's the specified treated unit.
+\item \code{.type}: type of the nested data construct: \code{treated} or \code{controls}.
+Keeps tract of which data construct is located in \code{.outcome} field.
+\item \code{.outcome}: nested data construct containing the outcome variable
+configured for the sythnetic control method. Data is configured into a wide
+format for the optimization task.
+\item \code{.predictors}: nested data construct containing the covariate matrices
+for the treated and control (donor) units. Data is configured into a wide
+format for the optimization task.
+\item \code{.unit_weights}: Nested column of unit weights (i.e. how each unit from
+the donor pool contributes to the synthetic control). Weights should sum to
+}
+\enumerate{
+\item 
+}
+\itemize{
+\item \code{.predictor_weights}: Nested column of predictor variable weights (i.e.
+the significance of each predictor in optimizing the weights that generate
+the synthetic control). Weights should sum to 1. If variable weights are
+provided, those variable weights are provided.
+\item \code{.original_data}: original impute data filtered by treated or control
+units. This allows for easy processing down stream when generating
+predictors.
+\item \code{.meta}: stores information regarding the unit and time index, the
+treated unit and time and the name of the outcome variable. Used downstream
+in subsequent functions.
+\item \code{.loss}: the RMPE loss for both sets of weights.
+}
 }
 \description{
-generate_weights
+Generates weights from the the aggregate-level predictors to generate the
+synthetic control. These weights determine which variable and which unit from
+the donor pool is important in generating the synthetic control.
+}
+\details{
+\strong{Optimization}
+
+The method completes the following nested minimization task:
+
+\deqn{W^*(V) =  min \sum^M_{m=1} v_m (X_{1m} - \sum^{J+1}_{j=2}w_j X_{jm})^2}
+
+Where \eqn{X_1} and \eqn{X_0}, which are matrices of aggregate-level
+covariates, are generated using the \code{generate_predictor()} function. \eqn{V}
+denotes the variable weights with \eqn{M} reflecting the total number of
+predictor variables. Thus, the optimal weights are a function of \eqn{V}.
+
+The weights themselves are optimized via the following:
+
+\deqn{\sum^{T_0}_{t=1}(Y_{1t} - \sum^{J=1}_{j=2}w^*_j(V)Y_{jt})^2}
+
+where \eqn{T_0} denotes the pre-intervention period (or a specific
+optimization window supplied by the argument \code{time_window}); \eqn{J} denotes
+the number of control units from the donor pool, where \eqn{j=1} reflects the
+treated unit.
+
+Thus, the weights are selected in a manner that produces a synthetic
+\eqn{\hat{Y}} that approximates the observed \eqn{Y} as closely as possible.
+
+\strong{Variable Weights}
+
+As proposed in Abadie and Gardeazabal (2003) and Abadie, Diamond, Hainmueller
+(2010), the synth function routinely searches for the set of weights that
+generate the best fitting convex combination of the control units. In other
+words, the predictor weight matrix V (\code{custom_variable_weights}) is chosen
+among all positive definite diagonal matrices such that MSPE is minimized for
+the pre-intervention period. Instead of using this data-driven procedures to
+search for the best fitting synthetic control group, the user may supply
+their own weights using the \code{custom_variable_weights} argument. These weights
+reflect the user's subjective assessment of the predictive power of the
+variables generated by \code{generate_predictor()}.
+
+When generating weights for the placebo cases, the variable weights used for
+the fit of the treated unit optimization. This ensures comparability between
+the placebo and treated fits. In addition, it greatly decreases processing
+time as the variable weights do not be learned for every placebo entry.
+}
+\examples{
+
+\dontrun{
+
+# Smoking example data
+data(smoking)
+
+smoking_out <-
+smoking \%>\%
+
+# initial the synthetic control object
+synthetic_control(outcome = cigsale,
+                  unit = state,
+                  time = year,
+                  i_unit = "California",
+                  i_time = 1988,
+                  generate_placebos=T) \%>\%
+
+# Generate the aggregate predictors used to generate the weights
+  generate_predictor(time_window=1980:1988,
+                     lnincome = mean(lnincome, na.rm = T),
+                     retprice = mean(retprice, na.rm = T),
+                     age15to24 = mean(age15to24, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1984:1988,
+                     beer = mean(beer, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1975,
+                     cigsale_1975 = cigsale) \%>\%
+
+  generate_predictor(time_window=1980,
+                     cigsale_1980 = cigsale) \%>\%
+
+  generate_predictor(time_window=1988,
+                     cigsale_1988 = cigsale) \%>\%
+
+
+  # Generate the fitted weights for the synthetic control
+  generate_weights(optimization_window =1970:1988,
+                   Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6)
+
+# Retrieve weights
+smoking_out \%>\% grab_predictor_weights()
+smoking_out \%>\% grab_unit_weights()
+
+# Retrieve the placebo weights as well.
+smoking_out \%>\% grab_predictor_weights(placebo=T)
+smoking_out \%>\% grab_unit_weights(placebo=T)
+
+# Plot the unit weights
+smoking_out \%>\% plot_weights()
+
+}
+
 }

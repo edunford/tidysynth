@@ -7,11 +7,101 @@
 generate_control(data)
 }
 \arguments{
-\item{data}{}
+\item{data}{nested data of type \code{synth_tbl} generated from
+\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
+information on how a \code{sythn_tbl} object is organized. In addition,
+\code{.unit_weights} must be generate using \code{generate_weights()}. See
+documentation for more information on how to generate weights.}
 }
 \value{
-
+\code{synth_tbl} with nested fields containing the following:
+\itemize{
+\item \code{.id}: unit id for the intervention case (this will differ when a placebo
+unit).
+\item \code{.placebo}: indicator field taking on the value of 1 if a unit is a
+placebo unit, 0 if it's the specified treated unit.
+\item \code{.type}: type of the nested data construct: \code{treated} or \code{controls}.
+Keeps tract of which data construct is located in \code{.outcome} field.
+\item \code{.outcome}: nested data construct containing the outcome variable
+configured for the sythnetic control method. Data is configured into a wide
+format for the optimization task.
+\item \code{.predictors}: nested data construct containing the covariate matrices
+for the treated and control (donor) units. Data is configured into a wide
+format for the optimization task.
+\item \code{.synthetic_control}: nested data construct containing the synthetic
+control version of the outcome variable generated from the unit weights.
+\item \code{.unit_weights}: Nested column of unit weights (i.e. how each unit from
+the donor pool contributes to the synthetic control). Weights should sum to
+}
+\enumerate{
+\item 
+}
+\itemize{
+\item \code{.predictor_weights}: Nested column of predictor variable weights (i.e.
+the significance of each predictor in optimizing the weights that generate
+the synthetic control). Weights should sum to 1. If variable weights are
+provided, those variable weights are provided.
+\item \code{.original_data}: original impute data filtered by treated or control
+units. This allows for easy processing down stream when generating
+predictors.
+\item \code{.meta}: stores information regarding the unit and time index, the
+treated unit and time and the name of the outcome variable. Used downstream
+in subsequent functions.
+\item \code{.loss}: the RMPE loss for both sets of weights.
+}
 }
 \description{
-generate_control
+Uses the weights generated from \code{generate_weights()} to weight control units
+from the donor pool to denerate a synthetic version of the treated unit time
+series.
+}
+\examples{
+
+\dontrun{
+
+# Smoking example data
+data(smoking)
+
+smoking_out <-
+smoking \%>\%
+
+# initial the synthetic control object
+synthetic_control(outcome = cigsale,
+                  unit = state,
+                  time = year,
+                  i_unit = "California",
+                  i_time = 1988,
+                  generate_placebos=F) \%>\%
+
+# Generate the aggregate predictors used to generate the weights
+  generate_predictor(time_window=1980:1988,
+                     lnincome = mean(lnincome, na.rm = T),
+                     retprice = mean(retprice, na.rm = T),
+                     age15to24 = mean(age15to24, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1984:1988,
+                     beer = mean(beer, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1975,
+                     cigsale_1975 = cigsale) \%>\%
+
+  generate_predictor(time_window=1980,
+                     cigsale_1980 = cigsale) \%>\%
+
+  generate_predictor(time_window=1988,
+                     cigsale_1988 = cigsale) \%>\%
+
+
+  # Generate the fitted weights for the synthetic control
+  generate_weights(optimization_window =1970:1988,
+                   Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) \%>\%
+
+  # Generate the synthetic control
+  generate_control()
+
+# Plot the observed and synthetic trend
+smoking_out \%>\% plot_trends(time_window = 1970:2000)
+
+}
+
 }

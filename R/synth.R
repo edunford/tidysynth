@@ -1,29 +1,73 @@
-#' implement_synth
+#' synth_method
 #'
 #' [AUX Function] Original synthetic control method proposed by (Abadie et al.
-#' 2003, 2010, 2015) and implemented in `synth` package.
+#' 2003, 2010, 2015) and implemented in `synth` package. Method has been
+#' commendeered for internal use here.
 #'
 #' Synth works as the main engine of the `tidysynth` package. More on the method
 #' and estimation procedures can be found in (Abadie et al. 2010).
 #'
-#' @param treatment_unit_covariates
-#' @param control_units_covariates
-#' @param control_units_outcome
-#' @param treatment_unit_outcome
-#' @param custom.v
-#' @param optimxmethod
-#' @param genoud
-#' @param quadopt
-#' @param Margin.ipop
-#' @param Sigf.ipop
-#' @param Bound.ipop
-#' @param verbose
-#' @param ...
+#' @param treatment_unit_covariates matrix of treated predictor data
+#' @param control_units_covariates matrix of controls' predictor data.
+#' @param control_units_outcome matrix of controls' outcome data for the
+#'   pre-treatment periods over which MSPE is to be minimized.
+#' @param treatment_unit_outcome matrix of treated outcome data for the
+#'   pre-treatment periods over which MSPE is to be minimized.
+#' @param custom.v vector of weights for predictors supplied by the user. uses
+#'   synth to bypass optimization for solution.V. See details.
+#' @param optimxmethod string vector that specifies the optimization algorithms
+#'   to be used. Permissable values are all optimization algorithms that are
+#'   currently implemented in the optimx function (see this function for
+#'   details). This list currently includes c("Nelder-Mead', 'BFGS', 'CG',
+#'   'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
+#'   are specified, synth will run the optimization with all chosen algorithms
+#'   and then return the result for the best performing method. Default is
+#'   c("Nelder-Mead", "BFGS"). As an additional possibility, the user can also
+#'   specify 'All' which means that synth will run the results over all
+#'   algorithms in optimx.
+#' @param genoud Logical flag. If true, synth embarks on a two step
+#'   optimization. In the first step, genoud, an optimization function that
+#'   combines evolutionary algorithm methods with a derivative-based
+#'   (quasi-Newton) method to solve difficult optimization problems, is used to
+#'   obtain a solution. See genoud for details. In the second step, the genoud
+#'   results are passed to the optimization algorithm(s) chosen in optimxmethod
+#'   for a local optimization within the neighborhood of the genoud solution.
+#'   This two step optimization procedure will require much more computing time,
+#'   but may yield lower loss in cases where the search space is highly
+#'   irregular.
+#' @param quadopt string vector that specifies the routine for quadratic
+#'   optimization over w weights. possible values are "ipop" and "LowRankQP"
+#'   (see ipop and LowRankQP for details). default is 'ipop'
+#' @param Margin.ipop setting for ipop optimization routine: how close we get to
+#'   the constrains (see ipop for details)
+#' @param Sigf.ipop setting for ipop optimization routine: Precision (default: 7
+#'   significant figures (see ipop for details)
+#' @param Bound.ipop setting for ipop optimization routine: Clipping bound for
+#'   the variables (see ipop for details)
+#' @param verbose Logical flag. If TRUE then intermediate results will be shown.
+#' @param ... Additional arguments to be passed to optimx and or genoud to
+#'   adjust optimization.
 #'
-#' @return
-#' @export
+#' @details As proposed in Abadie and Gardeazabal (2003) and Abadie, Diamond,
+#'   Hainmueller (2010), the synth function routinely searches for the set of
+#'   weights that generate the best fitting convex combination of the control
+#'   units. In other words, the predictor weight matrix V is chosen among all
+#'   positive definite diagonal matrices such that MSPE is minimized for the
+#'   pre-intervention period. Instead of using this data-driven procedures to
+#'   search for the best fitting synthetic control group, the user may supply
+#'   his own vector of V weights, based on his subjective assessment of the
+#'   predictive power of the variables in treatment_unit_covariates and
+#'   control_units_covariates. In this case, the vector of V weights for each
+#'   variable should be supplied via the custom.V option in synth and the
+#'   optimization over the V matrices is bypassed.
 #'
-#' @examples
+#' @return solution.v =	vector of predictor weights; solution.w = vector of
+#'   weights across the controls; loss.v	= MSPE from optimization over v and w
+#'   weights; loss.w	= Loss from optimization over w weights; custom.v	=if this
+#'   argument was specified in the call to synth, this outputs the weight vector
+#'   specified; rgV.optim = Results from optimx() minimization. Could be used
+#'   for diagnostics.
+#'
 synth_method <- function (treatment_unit_covariates = NULL,
                           control_units_covariates = NULL,
                           control_units_outcome = NULL,

@@ -20,15 +20,73 @@ synth_weights(
 )
 }
 \arguments{
-\item{custom_variable_weights}{Set custom weights for the covariates}
+\item{custom_variable_weights}{a vector of provided weights that define a
+variable's importance in the optimization task. The weights are intended to
+reflect the users prior regarding the relative significance of each
+variable. Vector must sum to one. Note that the method is significantly
+faster when a custom variable weights are provided. Default behavior
+assumes no wieghts are provided and thus must be learned from the data.}
 
-\item{include_fit}{Return the synth fit in the nested output}
+\item{include_fit}{Boolean flag, if TRUE, then the optimization output is
+included in the outputted \code{synth_tbl}.}
 
-\item{optimization_method}{}
+\item{optimization_method}{string vector that specifies the optimization
+algorithms to be used. Permissable values are all optimization algorithms
+that are currently implemented in the optimx function (see this function
+for details). This list currently includes c("Nelder-Mead', 'BFGS', 'CG',
+'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
+are specified, synth will run the optimization with all chosen algorithms
+and then return the result for the best performing method. Default is
+"BFGS". As an additional possibility, the user can also specify 'All' which
+means that synth will run the results over all algorithms in optimx.}
+
+\item{genoud}{Logical flag. If true, synth embarks on a two step
+optimization. In the first step, genoud, an optimization function that
+combines evolutionary algorithm methods with a derivative-based
+(quasi-Newton) method to solve difficult optimization problems, is used to
+obtain a solution. See genoud for details. In the second step, the genoud
+results are passed to the optimization algorithm(s) chosen in optimxmethod
+for a local optimization within the neighborhood of the genoud solution.
+This two step optimization procedure will require much more computing time,
+but may yield lower loss in cases where the search space is highly
+irregular.}
+
+\item{quadopt}{string vector that specifies the routine for quadratic
+optimization over w weights. possible values are "ipop" and "LowRankQP"
+(see ipop and LowRankQP for details). default is 'ipop'}
+
+\item{Margin.ipop}{setting for ipop optimization routine: how close we get to
+the constrains (see ipop for details)}
+
+\item{Sigf.ipop}{setting for ipop optimization routine: Precision (default: 7
+significant figures (see ipop for details)}
+
+\item{Bound.ipop}{setting for ipop optimization routine: Clipping bound for
+the variables (see ipop for details)}
+
+\item{verbose}{Logical flag. If TRUE then intermediate results will be shown.}
+
+\item{...}{Additional arguments to be passed to optimx and or genoud to
+adjust optimization.}
+
+\item{optimization_window}{the temporal window of the pre-intervention
+outcome time series to be used in the optimization task. Default behavior
+uses the entire pre-intervention time period.}
 }
 \value{
-
+tibble data frame with optimized weights attached.
 }
 \description{
-Auxiliary Function for generating individual weights for each data entry.
+Auxiliary Function for generating individual weights for each unit-specific
+data entry. The method allows of opimtizing weights for all placebo and
+treated data configurations (assuming there are placebo configurations to
+generate)
+}
+\details{
+#' @param data nested data of type \code{synth_tbl} generated from
+\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
+information on how a \code{sythn_tbl} object is organized. In addition, a matrix
+of predictors must be prespecified using the \code{generate_predictor()}
+function. See documentation for more information on how to generate a
+predictor function.
 }

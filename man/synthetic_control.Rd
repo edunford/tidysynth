@@ -10,15 +10,146 @@ synthetic_control(
   unit = NULL,
   time = NULL,
   i_unit = NULL,
-  i_time = NULL
+  i_time = NULL,
+  generate_placebos = TRUE
 )
 }
 \arguments{
-\item{i_time}{}
+\item{data}{panel data frame in long format (i.e. unit of analysis is
+unit-time period, such as country-year) containing both treated and control
+donor pool units. All units/time periods that are not desired to be in the
+donor should be excluded prior to passing to \code{synthetic_control()}.}
+
+\item{outcome}{Name of the outcome variable. Outcome variable should be a
+continuous measure that is observed across multiple time points.}
+
+\item{unit}{Name of the case unit variable in the panel data.}
+
+\item{time}{Name of the time unit variable in the panel data.}
+
+\item{i_unit}{Name of the treated case unit where the intervention occurred.}
+
+\item{i_time}{Name of the treated time period when the intervention occurred.}
+
+\item{generate_placebos}{logical flag requesting that placebo versions of the
+data be generated for downstream inferential methods. Generates a version
+of the nested data where each control unit is the intervention unit.
+Default is TRUE.}
 }
 \value{
-
+\code{synth_tbl} with nested fields containing the following:
+\itemize{
+\item \code{.id}: unit id for the intervention case (this will differ when a placebo
+unit).
+\item \code{.placebo}: indicator field taking on the value of 1 if a unit is a
+placebo unit, 0 if it's the specified treated unit.
+\item \code{.type}: type of the nested data construct: \code{treated} or \code{controls}.
+Keeps tract of which data construct is located in \code{.outcome} field.
+\item \code{.outcome}: nested data construct containing the outcome variable
+configured for the sythnetic control method. Data is configured into a wide
+formate for the optimization task.
+\item \code{.original_data}: original impute data filtered by treated or control
+units. This allows for easy processing down stream when generating
+predictors.
+\item \code{.meta}: stores information regarding the unit and time index, the
+treated unit and time and the name of the outcome variable. Used downstream
+in subsequent functions.
+}
 }
 \description{
-synthetic_control
+\code{synthetic_control()} initializes a \code{synth_tbl} object. It can be used to
+declare the input data frame for use in the syntehtic control method. Allows
+for the specification of the panel units along with the intervention unit and
+time (\code{treated}). All units that are not the designated treated units are
+entered into the donor pool from which the synthetic control is generated.
+All time points prior and equal to the intervention time are designated as
+the pre-intervention period; and all time periods after are the
+post-intervention period.
+}
+\details{
+Note that \code{synthetic_control()} also allows for the simultaneous generation
+of placebo units (i.e. units where the treated unit is one of the controls).
+The addition of the placebo units increases computation time (as a synthetic
+control needs to be generated for each placebo unit) but it allows for
+inference as outlined in Abadie et al. 2010.
+}
+\examples{
+
+############################
+###### Basic Example #######
+############################
+
+# Smoking example data
+data(smoking)
+
+# initial the synthetic control object
+smoking_out <-
+smoking \%>\%
+synthetic_control(outcome = cigsale,
+                  unit = state,
+                  time = year,
+                  i_unit = "California",
+                  i_time = 1988,
+                  generate_placebos=F)
+
+# data configuration
+dplyr::glimpse(smoking_out)
+
+# Grap the organized outcome variables
+smoking_out \%>\% grab_outcome(type = "treated")
+smoking_out \%>\% grab_outcome(type = "controls")
+
+
+###################################
+####### Full implementation #######
+###################################
+
+\dontrun{
+
+# Smoking example data
+data(smoking)
+
+smoking_out <-
+smoking \%>\%
+
+# initial the synthetic control object
+synthetic_control(outcome = cigsale,
+                  unit = state,
+                  time = year,
+                  i_unit = "California",
+                  i_time = 1988,
+                  generate_placebos=F) \%>\%
+
+# Generate the aggregate predictors used to generate the weights
+  generate_predictor(time_window=1980:1988,
+                     lnincome = mean(lnincome, na.rm = T),
+                     retprice = mean(retprice, na.rm = T),
+                     age15to24 = mean(age15to24, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1984:1988,
+                     beer = mean(beer, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1975,
+                     cigsale_1975 = cigsale) \%>\%
+
+  generate_predictor(time_window=1980,
+                     cigsale_1980 = cigsale) \%>\%
+
+  generate_predictor(time_window=1988,
+                     cigsale_1988 = cigsale) \%>\%
+
+
+  # Generate the fitted weights for the synthetic control
+  generate_weights(optimization_window =1970:1988,
+                   Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) \%>\%
+
+  # Generate the synthetic control
+  generate_control()
+
+# Plot the observed and synthetic trend
+smoking_out \%>\% plot_trends(time_window = 1970:2000)
+
+}
+
+
 }

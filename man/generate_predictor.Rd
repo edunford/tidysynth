@@ -7,11 +7,85 @@
 generate_predictor(data, time_window = NULL, ...)
 }
 \arguments{
-\item{...}{}
+\item{data}{nested data of type \code{synth_tbl} generated from
+\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
+information on how a \code{sythn_tbl} object is organized.}
+
+\item{time_window}{set time window from the pre-intervention period that the
+data should be aggregated across to generate the specific predictor.
+Default is to use the entire pre-intervention period.}
+
+\item{...}{Name-value pairs of summary functions. The name will be the name
+of the variable in the result. The value should be an expression that
+returns a single value like min(x), n(), or sum(is.na(y)). Note that for
+all summary functions \code{na.rm = TRUE} argument should be specified as
+aggregating across units with missing values is a common occurrence.}
 }
 \value{
-
+\code{synth_tbl} with nested fields containing the following:
+\itemize{
+\item \code{.id}: unit id for the intervention case (this will differ when a placebo
+unit).
+\item \code{.placebo}: indicator field taking on the value of 1 if a unit is a
+placebo unit, 0 if it's the specified treated unit.
+\item \code{.type}: type of the nested data construct: \code{treated} or \code{controls}.
+Keeps tract of which data construct is located in \code{.outcome} field.
+\item \code{.outcome}: nested data construct containing the outcome variable
+configured for the sythnetic control method. Data is configured into a wide
+format for the optimization task.
+\item \code{.predictors}: nested data construct containing the covariate matrices
+for the treated and control (donor) units. Data is configured into a wide
+format for the optimization task.
+\item \code{.original_data}: original impute data filtered by treated or control
+units. This allows for easy processing down stream when generating
+predictors.
+\item \code{.meta}: stores information regarding the unit and time index, the
+treated unit and time and the name of the outcome variable. Used downstream
+in subsequent functions.
+}
 }
 \description{
-generate_predictor
+Create one or more scalar variables summarizing the variables across a
+specific time window as predictor features to be uses as covariates in the
+pre-treatment matching step to generate the synthetic control.
+}
+\details{
+Specifically, \code{generate_predictor()} generates the \eqn{X_1} and \eqn{X_0}
+matrices of aggregate-level covariates to be used in the following
+minimization task.
+
+\deqn{W^*(V) =  min \sum^M_{m=1} v_m (X_{1m} - \sum^{J+1}_{j=2}w_j X_{jm})^2}
+
+The importance of the generate predictors are determine by vector \eqn{V},
+and the weights that determine unit-level importance are determined by vector
+\eqn{W}. The nested optimation task seeks to find optimal values of \eqn{V}
+and \eqn{W}. Note also that \eqn{V} can be provided by the user. See
+\code{?generate_weights()}.
+}
+\examples{
+
+# Smoking example data
+data(smoking)
+
+smoking_out <-
+smoking \%>\%
+
+# initial the synthetic control object
+synthetic_control(outcome = cigsale,
+                  unit = state,
+                  time = year,
+                  i_unit = "California",
+                  i_time = 1988,
+                  generate_placebos=F) \%>\%
+
+# Generate the aggregate predictors used to generate the weights
+  generate_predictor(time_window=1980:1988,
+                     lnincome = mean(lnincome, na.rm = T),
+                     retprice = mean(retprice, na.rm = T),
+                     age15to24 = mean(age15to24, na.rm = T))
+
+# Extract respective predictor matrices
+smoking_out \%>\% grab_predictors(type = "treated")
+smoking_out \%>\% grab_predictors(type = "controls")
+
 }

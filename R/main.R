@@ -1,26 +1,171 @@
 #' synthetic_control
 #'
-#' @param data
-#' @param outcome
-#' @param unit
-#' @param time
-#' @param i_unit
-#' @param i_time
+#' `synthetic_control()` initializes a `synth_tbl` object. It can be used to
+#' declare the input data frame for use in the syntehtic control method. Allows
+#' for the specification of the panel units along with the intervention unit and
+#' time (`treated`). All units that are not the designated treated units are
+#' entered into the donor pool from which the synthetic control is generated.
+#' All time points prior and equal to the intervention time are designated as
+#' the pre-intervention period; and all time periods after are the
+#' post-intervention period.
 #'
-#' @return
+#' Note that `synthetic_control()` also allows for the simultaneous generation
+#' of placebo units (i.e. units where the treated unit is one of the controls).
+#' The addition of the placebo units increases computation time (as a synthetic
+#' control needs to be generated for each placebo unit) but it allows for
+#' inference as outlined in Abadie et al. 2010.
+#'
+#' @param data panel data frame in long format (i.e. unit of analysis is
+#'   unit-time period, such as country-year) containing both treated and control
+#'   donor pool units. All units/time periods that are not desired to be in the
+#'   donor should be excluded prior to passing to `synthetic_control()`.
+#' @param outcome Name of the outcome variable. Outcome variable should be a
+#'   continuous measure that is observed across multiple time points.
+#' @param unit Name of the case unit variable in the panel data.
+#' @param time Name of the time unit variable in the panel data.
+#' @param i_unit Name of the treated case unit where the intervention occurred.
+#' @param i_time Name of the treated time period when the intervention occurred.
+#' @param generate_placebos logical flag requesting that placebo versions of the
+#'   data be generated for downstream inferential methods. Generates a version
+#'   of the nested data where each control unit is the intervention unit.
+#'   Default is TRUE.
+#'
+#' @return `synth_tbl` with nested fields containing the following:
+#'
+#'   - `.id`: unit id for the intervention case (this will differ when a placebo
+#'   unit).
+#'
+#'   - `.placebo`: indicator field taking on the value of 1 if a unit is a
+#'   placebo unit, 0 if it's the specified treated unit.
+#'
+#'   - `.type`: type of the nested data construct: `treated` or `controls`.
+#'   Keeps tract of which data construct is located in `.outcome` field.
+#'
+#'   - `.outcome`: nested data construct containing the outcome variable
+#'   configured for the sythnetic control method. Data is configured into a wide
+#'   formate for the optimization task.
+#'
+#'   - `.original_data`: original impute data filtered by treated or control
+#'   units. This allows for easy processing down stream when generating
+#'   predictors.
+#'
+#'   - `.meta`: stores information regarding the unit and time index, the
+#'   treated unit and time and the name of the outcome variable. Used downstream
+#'   in subsequent functions.
+#'
 #' @export
 #'
 #' @examples
+#'
+#' ############################
+#' ###### Basic Example #######
+#' ############################
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' # initial the synthetic control object
+#' smoking_out <-
+#' smoking %>%
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=F)
+#'
+#' # data configuration
+#' dplyr::glimpse(smoking_out)
+#'
+#' # Grap the organized outcome variables
+#' smoking_out %>% grab_outcome(type = "treated")
+#' smoking_out %>% grab_outcome(type = "controls")
+#'
+#'
+#' ###################################
+#' ####### Full implementation #######
+#' ###################################
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=F) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_trends(time_window = 1970:2000)
+#'
+#' }
+#'
+#'
 synthetic_control <- function(data = NULL,
                               outcome = NULL,
                               unit = NULL,
                               time = NULL,
                               i_unit=NULL,
-                              i_time =NULL)
-{
-  # Aux. functions
-  generate_nested_data <-function(data=NULL,i_unit = NULL,placebo = NULL,id = 1){
-    # Auxiliary function to build out the treated and control units
+                              i_time =NULL,
+                              generate_placebos = TRUE){
+  UseMethod("synthetic_control")
+}
+
+
+#' @export
+synthetic_control.data.frame <- function(data = NULL,
+                                         outcome = NULL,
+                                         unit = NULL,
+                                         time = NULL,
+                                         i_unit=NULL,
+                                         i_time =NULL,
+                                         generate_placebos = TRUE){
+
+
+  # AUX FUNCTION ------------------------------------------------------------
+
+  # **generate_nested_data**:  Auxiliary function to build out the treated and
+  # control units. Takes each data scenario one at a time (e.g. the observed
+  # treated and the controls serving as placebo treatment units) inside
+  # `synthetic_control`
+  generate_nested_data <- function(data=NULL,
+                                   i_unit = NULL,
+                                   placebo = NULL,
+                                   id = 1,...){
+
 
     # configure the outcome for the treated unit
     trt_outcome <-
@@ -54,6 +199,10 @@ synthetic_control <- function(data = NULL,
     return(nested_output)
   }
 
+
+
+  # Main  -----------------------------------------------------
+
   # Quasi-quosures
   outcome <- rlang::enquo(outcome)
   unit <- rlang::enquo(unit)
@@ -76,31 +225,171 @@ synthetic_control <- function(data = NULL,
     unit_name = all_units$unit_name[i]
     placebo = all_units$placebo[i]
 
-    # Placebo == unit that did not receive the treatment
+    # Build up master nested data frame with treated and placebo frames.
     master_nest <-
       generate_nested_data(data=data, i_unit = unit_name,
                            placebo = placebo,id=unit_name) %>%
       dplyr::bind_rows(master_nest,.)
+
+    # Break cycle if now placebo units are requested.
+    if(i==1 & !generate_placebos){break()}
   }
 
   # return the entire nested object.
-  return(master_nest)
+  return(as_synth(master_nest))
 }
+
+
+
+#' as_synth
+#'
+#' Coerce tibble data frame object to class `synth_tbl``
+#'
+#' @param .data tibble data frame.
+#' @param ...   catch for additional arguments
+#'
+#' @return An object of class `synth_tbl`
+#' @export
+#'
+#' @examples
+as_synth <- function(.data, ...){
+  UseMethod("as_synth")
+}
+
+#' @export
+as_synth.data.frame = function(.data,...){
+  if(!"synth_tbl" %in% class(.data)){
+    class(.data) <- c(class(.data),"synth_tbl")
+  }
+  return(.data)
+}
+
+
+#' is_synth
+#'
+#' test for objects of type "synth_tbl".
+#'
+#' @param x object to be coerced or tested.
+#'
+#' @return boolean flag; TRUE if object is of class synth_tbl
+#' @export
+#'
+#' @examples
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' # initial the synthetic control object
+#' smoking_out <-
+#' smoking %>%
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=F)
+#'
+#' # Check if is class synth_tbl
+#' is_synth(smoking_out)
+#'
+is_synth <- function(x){
+  ifelse("synth_tbl" %in% class(x),TRUE,FALSE)
+}
+
 
 
 #' generate_predictor
 #'
-#' @param data
-#' @param time_window
-#' @param ...
+#' Create one or more scalar variables summarizing the variables across a
+#' specific time window as predictor features to be uses as covariates in the
+#' pre-treatment matching step to generate the synthetic control.
 #'
-#' @return
+#' Specifically, `generate_predictor()` generates the \eqn{X_1} and \eqn{X_0}
+#' matrices of aggregate-level covariates to be used in the following
+#' minimization task.
+#'
+#' \deqn{W^*(V) =  min \sum^M_{m=1} v_m (X_{1m} - \sum^{J+1}_{j=2}w_j X_{jm})^2}
+#'
+#' The importance of the generate predictors are determine by vector \eqn{V},
+#' and the weights that determine unit-level importance are determined by vector
+#' \eqn{W}. The nested optimation task seeks to find optimal values of \eqn{V}
+#' and \eqn{W}. Note also that \eqn{V} can be provided by the user. See
+#' `?generate_weights()`.
+#'
+#'
+#' @param data nested data of type `synth_tbl` generated from
+#'   `sythetic_control()`. See `synthetic_control()` documentation for more
+#'   information on how a `sythn_tbl` object is organized.
+#' @param time_window set time window from the pre-intervention period that the
+#'   data should be aggregated across to generate the specific predictor.
+#'   Default is to use the entire pre-intervention period.
+#' @param ... Name-value pairs of summary functions. The name will be the name
+#'   of the variable in the result. The value should be an expression that
+#'   returns a single value like min(x), n(), or sum(is.na(y)). Note that for
+#'   all summary functions `na.rm = TRUE` argument should be specified as
+#'   aggregating across units with missing values is a common occurrence.
+#'
+#' @return `synth_tbl` with nested fields containing the following:
+#'
+#'   - `.id`: unit id for the intervention case (this will differ when a placebo
+#'   unit).
+#'
+#'   - `.placebo`: indicator field taking on the value of 1 if a unit is a
+#'   placebo unit, 0 if it's the specified treated unit.
+#'
+#'   - `.type`: type of the nested data construct: `treated` or `controls`.
+#'   Keeps tract of which data construct is located in `.outcome` field.
+#'
+#'   - `.outcome`: nested data construct containing the outcome variable
+#'   configured for the sythnetic control method. Data is configured into a wide
+#'   format for the optimization task.
+#'
+#'   - `.predictors`: nested data construct containing the covariate matrices
+#'   for the treated and control (donor) units. Data is configured into a wide
+#'   format for the optimization task.
+#'
+#'   - `.original_data`: original impute data filtered by treated or control
+#'   units. This allows for easy processing down stream when generating
+#'   predictors.
+#'
+#'   - `.meta`: stores information regarding the unit and time index, the
+#'   treated unit and time and the name of the outcome variable. Used downstream
+#'   in subsequent functions.
+#'
 #' @export
 #'
 #' @examples
-generate_predictor <- function(data,
-                               time_window=NULL,
-                               ...){
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=F) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T))
+#'
+#' # Extract respective predictor matrices
+#' smoking_out %>% grab_predictors(type = "treated")
+#' smoking_out %>% grab_predictors(type = "controls")
+#'
+generate_predictor <- function(data,time_window=NULL,...){
+  UseMethod("generate_predictor")
+}
+
+#' @export
+generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 
 
   # Auxiliary function for generating a predictor for a single configuration of
@@ -112,7 +401,7 @@ generate_predictor <- function(data,
     unit_index <- data$.meta[[1]]$unit_index[1]
 
     # INTERNAL FUNCTIONS
-    extract_predictor <- function(data,type = "treatment",...){
+    extract_predictor <- function(data,type = "treated",...){
       # Aux. function for processing predictors. Takes in quosure statement,
       # passes it internally to summarize, and organizes data to behave
       # accordingly as a synth_method input.
@@ -120,6 +409,7 @@ generate_predictor <- function(data,
       data %>%
         dplyr::filter(.type==type) %>%
         dplyr::select(.original_data) %>%
+        tibble::as_tibble() %>%
         tidyr::unnest(cols=c(.original_data)) %>%
 
         # Only relevant time units (as specified by the window)
@@ -145,6 +435,7 @@ generate_predictor <- function(data,
 
         # extract the existing predictors set and unnest.
         dplyr::select(.predictors) %>%
+        tibble::as_tibble() %>%
         tidyr::unnest(cols=.predictors) %>%
 
         # Drop any prior generations of the same variable
@@ -203,170 +494,231 @@ generate_predictor <- function(data,
   }
 
 
-  return(master_nest)
-}
-
-
-
-
-#' synth_weights
-#'
-#' Auxiliary Function for generating individual weights for each data entry.
-#'
-#' @param custom_variable_weights Set custom weights for the covariates
-#' @param include_fit Return the synth fit in the nested output
-#' @param genoud
-#' @param quadopt
-#' @param Margin.ipop
-#' @param Sigf.ipop
-#' @param Bound.ipop
-#' @param verbose
-#' @param ...
-#' @param data
-#' @param time_window
-#' @param optimization_method
-#'
-#' @return
-#' @export
-#'
-#' @examples
-synth_weights <- function(data,
-                          time_window = NULL,
-                          custom_variable_weights = NULL,
-                          include_fit = FALSE,
-                          optimization_method = c("Nelder-Mead", "BFGS"),
-                          genoud = FALSE,
-                          quadopt = "ipop",
-                          Margin.ipop = 5e-04,
-                          Sigf.ipop = 5,
-                          Bound.ipop = 10,
-                          verbose = F,
-                          ...){
-
-  # Checks (make sure data is being passed from synthetic_control with predictors)
-  if(!all(c(".type",".outcome",".original_data",".meta") %in% colnames(data))){stop("Data must be passed from the `sythetic_control()` function.")}
-  if(!".predictors" %in% colnames(data)){ stop("Predictors must be generated prior to running using `generate_predictors()`.")}
-
-
-  # If no temporal window is set to use in the optimization task, use the entire
-  # pretreatment period
-  if(is.null(time_window)){ time_window <- data$.outcome[[1]]$time_unit }
-
-  # Unpack the predictors used in the weighting task
-  treatment_unit_covariates <-
-    data %>%
-    grab_predictors("treated") %>%
-    dplyr::select(-variable) %>%
-    as.matrix()
-
-  control_units_covariates <-
-    data %>%
-    grab_predictors("controls") %>%
-    dplyr::select(-variable) %>%
-    as.matrix()
-
-
-  # Unpack the outcomes used in the weighting task
-  treatment_unit_outcome <- data %>%
-    grab_outcomes("treated") %>%
-    dplyr::filter(time_unit %in% time_window) %>%
-    dplyr::select(-time_unit) %>%
-    as.matrix()
-
-  control_units_outcome <- data %>%
-    grab_outcomes("controls") %>%
-    dplyr::filter(time_unit %in% time_window) %>%
-    dplyr::select(-time_unit) %>%
-    as.matrix()
-
-
-  # Implement the main fit method (Abadie et. al 2010)
-  fit <- synth_method(treatment_unit_covariates=treatment_unit_covariates,
-                      control_units_covariates=control_units_covariates,
-                      treatment_unit_outcome=treatment_unit_outcome,
-                      control_units_outcome=control_units_outcome,
-                      custom.v = custom_variable_weights,
-                      optimxmethod = optimization_method,
-                      genoud = genoud,
-                      quadopt = quadopt,
-                      Margin.ipop = Margin.ipop,
-                      Sigf.ipop = Sigf.ipop,
-                      Bound.ipop = Bound.ipop,
-                      verbose = verbose)
-
-  # **Simplify output to combine with main data nest**
-
-  # gather variable weights.
-  variable_weights <-
-    data %>%
-    grab_predictors() %>%
-    dplyr::transmute(variable,
-                     weight = as.numeric(fit$solution.v))
-
-  # gather control case assignment weights.
-  unit_weights <-
-    fit$solution.w %>%
-    as.data.frame(.) %>%
-    tibble::rownames_to_column(var = "unit") %>%
-    dplyr::rename(weight = w.weight)
-
-
-  # Return the input data with the control weights assigned.
-  fit_out <-
-    data %>%
-    dplyr::mutate(.unit_weights = list(NULL,unit_weights),
-                  .predictor_weights = list(NULL,variable_weights),
-                  .loss = list(NULL,tibble(variable_rmspe = as.numeric(fit$loss.v[1]),
-                                           control_unit_rmspe = as.numeric(fit$loss.w[1])))
-    ) %>%
-    dplyr::select(.id:.predictors,
-                  .unit_weights,
-                  .predictor_weights,
-                  dplyr::everything())
-
-  # Return fit if requested
-  if(include_fit){
-    fit_out <- fit_out %>% dplyr::mutate(.fit=list(NULL,fit))
-  }
-
-  return(fit_out)
+  return(as_synth(master_nest))
 }
 
 
 
 #' generate_weights
 #'
-#' @param data
-#' @param optimization_window
-#' @param custom_variable_weights
-#' @param include_fit
-#' @param optimization_method
-#' @param genoud
-#' @param quadopt
-#' @param Margin.ipop
-#' @param Sigf.ipop
-#' @param Bound.ipop
-#' @param verbose
-#' @param track_progress
-#' @param ...
+#' Generates weights from the the aggregate-level predictors to generate the
+#' synthetic control. These weights determine which variable and which unit from
+#' the donor pool is important in generating the synthetic control.
 #'
-#' @return
+#' **Optimization**
+#'
+#' The method completes the following nested minimization task:
+#'
+#' \deqn{W^*(V) =  min \sum^M_{m=1} v_m (X_{1m} - \sum^{J+1}_{j=2}w_j X_{jm})^2}
+#'
+#' Where \eqn{X_1} and \eqn{X_0}, which are matrices of aggregate-level
+#' covariates, are generated using the `generate_predictor()` function. \eqn{V}
+#' denotes the variable weights with \eqn{M} reflecting the total number of
+#' predictor variables. Thus, the optimal weights are a function of \eqn{V}.
+#'
+#' The weights themselves are optimized via the following:
+#'
+#' \deqn{\sum^{T_0}_{t=1}(Y_{1t} - \sum^{J=1}_{j=2}w^*_j(V)Y_{jt})^2}
+#'
+#' where \eqn{T_0} denotes the pre-intervention period (or a specific
+#' optimization window supplied by the argument `time_window`); \eqn{J} denotes
+#' the number of control units from the donor pool, where \eqn{j=1} reflects the
+#' treated unit.
+#'
+#' Thus, the weights are selected in a manner that produces a synthetic
+#' \eqn{\hat{Y}} that approximates the observed \eqn{Y} as closely as possible.
+#'
+#' **Variable Weights**
+#'
+#' As proposed in Abadie and Gardeazabal (2003) and Abadie, Diamond, Hainmueller
+#' (2010), the synth function routinely searches for the set of weights that
+#' generate the best fitting convex combination of the control units. In other
+#' words, the predictor weight matrix V (`custom_variable_weights`) is chosen
+#' among all positive definite diagonal matrices such that MSPE is minimized for
+#' the pre-intervention period. Instead of using this data-driven procedures to
+#' search for the best fitting synthetic control group, the user may supply
+#' their own weights using the `custom_variable_weights` argument. These weights
+#' reflect the user's subjective assessment of the predictive power of the
+#' variables generated by `generate_predictor()`.
+#'
+#' When generating weights for the placebo cases, the variable weights used for
+#' the fit of the treated unit optimization. This ensures comparability between
+#' the placebo and treated fits. In addition, it greatly decreases processing
+#' time as the variable weights do not be learned for every placebo entry.
+#'
+#'
+#' @param data nested data of type `synth_tbl` generated from
+#'   `sythetic_control()`. See `synthetic_control()` documentation for more
+#'   information on how a `sythn_tbl` object is organized. In addition, a matrix
+#'   of predictors must be prespecified using the `generate_predictor()`
+#'   function. See documentation for more information on how to generate a
+#'   predictor function.
+#' @param optimization_window the temporal window of the pre-intervention
+#'   outcome time series to be used in the optimization task. Default behavior
+#'   uses the entire pre-intervention time period.
+#' @param custom_variable_weights a vector of provided weights that define a
+#'   variable's importance in the optimization task. The weights are intended to
+#'   reflect the users prior regarding the relative significance of each
+#'   variable. Vector must sum to one. Note that the method is significantly
+#'   faster when a custom variable weights are provided. Default behavior
+#'   assumes no wieghts are provided and thus must be learned from the data.
+#' @param include_fit Boolean flag, if TRUE, then the optimization output is
+#'   included in the outputted `synth_tbl`.
+#' @param optimization_method string vector that specifies the optimization
+#'   algorithms to be used. Permissable values are all optimization algorithms
+#'   that are currently implemented in the optimx function (see this function
+#'   for details). This list currently includes c('Nelder-Mead', 'BFGS', 'CG',
+#'   'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
+#'   are specified, synth will run the optimization with all chosen algorithms
+#'   and then return the result for the best performing method. Default is
+#'   c('Nelder-Mead','BFGS'). As an additional possibility, the user can also specify 'All' which
+#'   means that synth will run the results over all algorithms in optimx.
+#' @param genoud Logical flag. If true, synth embarks on a two step
+#'   optimization. In the first step, genoud, an optimization function that
+#'   combines evolutionary algorithm methods with a derivative-based
+#'   (quasi-Newton) method to solve difficult optimization problems, is used to
+#'   obtain a solution. See genoud for details. In the second step, the genoud
+#'   results are passed to the optimization algorithm(s) chosen in optimxmethod
+#'   for a local optimization within the neighborhood of the genoud solution.
+#'   This two step optimization procedure will require much more computing time,
+#'   but may yield lower loss in cases where the search space is highly
+#'   irregular.
+#' @param quadopt string vector that specifies the routine for quadratic
+#'   optimization over w weights. possible values are "ipop" and "LowRankQP"
+#'   (see ipop and LowRankQP for details). default is 'ipop'
+#' @param Margin.ipop setting for ipop optimization routine: how close we get to
+#'   the constrains (see ipop for details)
+#' @param Sigf.ipop setting for ipop optimization routine: Precision (default: 7
+#'   significant figures (see ipop for details)
+#' @param Bound.ipop setting for ipop optimization routine: Clipping bound for
+#'   the variables (see ipop for details)
+#' @param verbose Logical flag. If TRUE then intermediate results will be shown.
+#' @param ... Additional arguments to be passed to optimx and or genoud to
+#'   adjust optimization.
+#'
+#' @return `synth_tbl` with nested fields containing the following:
+#'
+#'   - `.id`: unit id for the intervention case (this will differ when a placebo
+#'   unit).
+#'
+#'   - `.placebo`: indicator field taking on the value of 1 if a unit is a
+#'   placebo unit, 0 if it's the specified treated unit.
+#'
+#'   - `.type`: type of the nested data construct: `treated` or `controls`.
+#'   Keeps tract of which data construct is located in `.outcome` field.
+#'
+#'   - `.outcome`: nested data construct containing the outcome variable
+#'   configured for the sythnetic control method. Data is configured into a wide
+#'   format for the optimization task.
+#'
+#'   - `.predictors`: nested data construct containing the covariate matrices
+#'   for the treated and control (donor) units. Data is configured into a wide
+#'   format for the optimization task.
+#'
+#'   - `.unit_weights`: Nested column of unit weights (i.e. how each unit from
+#'   the donor pool contributes to the synthetic control). Weights should sum to
+#'   1.
+#'
+#'   - `.predictor_weights`: Nested column of predictor variable weights (i.e.
+#'   the significance of each predictor in optimizing the weights that generate
+#'   the synthetic control). Weights should sum to 1. If variable weights are
+#'   provided, those variable weights are provided.
+#'
+#'   - `.original_data`: original impute data filtered by treated or control
+#'   units. This allows for easy processing down stream when generating
+#'   predictors.
+#'
+#'   - `.meta`: stores information regarding the unit and time index, the
+#'   treated unit and time and the name of the outcome variable. Used downstream
+#'   in subsequent functions.
+#'
+#'   - `.loss`: the RMPE loss for both sets of weights.
+#'
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=T) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6)
+#'
+#' # Retrieve weights
+#' smoking_out %>% grab_predictor_weights()
+#' smoking_out %>% grab_unit_weights()
+#'
+#' # Retrieve the placebo weights as well.
+#' smoking_out %>% grab_predictor_weights(placebo=T)
+#' smoking_out %>% grab_unit_weights(placebo=T)
+#'
+#' # Plot the unit weights
+#' smoking_out %>% plot_weights()
+#'
+#' }
+#'
 generate_weights <-function(data,
                             optimization_window = NULL,
                             custom_variable_weights = NULL,
                             include_fit = FALSE,
-                            optimization_method = c("Nelder-Mead", "BFGS"),
+                            track_progress = FALSE,
+                            optimization_method = c('Nelder-Mead','BFGS'),
                             genoud = FALSE,
                             quadopt = "ipop",
                             Margin.ipop = 5e-04,
                             Sigf.ipop = 5,
                             Bound.ipop = 10,
                             verbose = FALSE,
-                            track_progress = TRUE,
                             ...){
+  UseMethod("generate_weights")
+}
+
+#' @export
+generate_weights.synth_tbl <-function(data,
+                                      optimization_window = NULL,
+                                      custom_variable_weights = NULL,
+                                      include_fit = FALSE,
+                                      optimization_method = c('Nelder-Mead','BFGS'),
+                                      genoud = FALSE,
+                                      quadopt = "ipop",
+                                      Margin.ipop = 5e-04,
+                                      Sigf.ipop = 5,
+                                      Bound.ipop = 10,
+                                      verbose = FALSE,
+                                      ...){
 
 
   # Iterate through the versions of the data, and generate the predictors for
@@ -378,14 +730,16 @@ generate_weights <-function(data,
   data_versions <- unique(data$.id)
 
   # Track progress
-  pb <- dplyr::progress_estimated(length(data_versions),min_time = 10)
+  pb <- dplyr::progress_estimated(length(data_versions),min_time = 30)
 
   # Iterate through the data versions
-  master_nest <- NULL; first_pass <- TRUE
+  master_nest <- NULL; first_pass <- TRUE; second_pass <- F
   for (v in data_versions){
 
-    # Track progress
-    if(track_progress){pb$tick()$print()}
+    # Progress reports
+    if(second_pass){cat("Generating weights for the placebo units.\n");second_pass <- F}
+    if(first_pass){cat("Generating weights for the intervention unit.\n");second_pass <- T}
+    pb$tick()$print()
 
     # Generate weight for the data version
     master_nest <-
@@ -415,21 +769,298 @@ generate_weights <-function(data,
 
   }
 
-  return(master_nest)
+  return(as_synth(master_nest))
+}
+
+
+#' synth_weights
+#'
+#' Auxiliary Function for generating individual weights for each unit-specific
+#' data entry. The method allows of opimtizing weights for all placebo and
+#' treated data configurations (assuming there are placebo configurations to
+#' generate)
+#'
+#' #' @param data nested data of type `synth_tbl` generated from
+#'   `sythetic_control()`. See `synthetic_control()` documentation for more
+#'   information on how a `sythn_tbl` object is organized. In addition, a matrix
+#'   of predictors must be prespecified using the `generate_predictor()`
+#'   function. See documentation for more information on how to generate a
+#'   predictor function.
+#' @param optimization_window the temporal window of the pre-intervention
+#'   outcome time series to be used in the optimization task. Default behavior
+#'   uses the entire pre-intervention time period.
+#' @param custom_variable_weights a vector of provided weights that define a
+#'   variable's importance in the optimization task. The weights are intended to
+#'   reflect the users prior regarding the relative significance of each
+#'   variable. Vector must sum to one. Note that the method is significantly
+#'   faster when a custom variable weights are provided. Default behavior
+#'   assumes no wieghts are provided and thus must be learned from the data.
+#' @param include_fit Boolean flag, if TRUE, then the optimization output is
+#'   included in the outputted `synth_tbl`.
+#' @param optimization_method string vector that specifies the optimization
+#'   algorithms to be used. Permissable values are all optimization algorithms
+#'   that are currently implemented in the optimx function (see this function
+#'   for details). This list currently includes c("Nelder-Mead', 'BFGS', 'CG',
+#'   'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
+#'   are specified, synth will run the optimization with all chosen algorithms
+#'   and then return the result for the best performing method. Default is
+#'   "BFGS". As an additional possibility, the user can also specify 'All' which
+#'   means that synth will run the results over all algorithms in optimx.
+#' @param genoud Logical flag. If true, synth embarks on a two step
+#'   optimization. In the first step, genoud, an optimization function that
+#'   combines evolutionary algorithm methods with a derivative-based
+#'   (quasi-Newton) method to solve difficult optimization problems, is used to
+#'   obtain a solution. See genoud for details. In the second step, the genoud
+#'   results are passed to the optimization algorithm(s) chosen in optimxmethod
+#'   for a local optimization within the neighborhood of the genoud solution.
+#'   This two step optimization procedure will require much more computing time,
+#'   but may yield lower loss in cases where the search space is highly
+#'   irregular.
+#' @param quadopt string vector that specifies the routine for quadratic
+#'   optimization over w weights. possible values are "ipop" and "LowRankQP"
+#'   (see ipop and LowRankQP for details). default is 'ipop'
+#' @param Margin.ipop setting for ipop optimization routine: how close we get to
+#'   the constrains (see ipop for details)
+#' @param Sigf.ipop setting for ipop optimization routine: Precision (default: 7
+#'   significant figures (see ipop for details)
+#' @param Bound.ipop setting for ipop optimization routine: Clipping bound for
+#'   the variables (see ipop for details)
+#' @param verbose Logical flag. If TRUE then intermediate results will be shown.
+#' @param ... Additional arguments to be passed to optimx and or genoud to
+#'   adjust optimization.
+#'
+#' @return tibble data frame with optimized weights attached.
+synth_weights <- function(data,
+                          time_window = NULL,
+                          custom_variable_weights = NULL,
+                          include_fit = FALSE,
+                          optimization_method = c("Nelder-Mead", "BFGS"),
+                          genoud = FALSE,
+                          quadopt = "ipop",
+                          Margin.ipop = 5e-04,
+                          Sigf.ipop = 5,
+                          Bound.ipop = 10,
+                          verbose = F,
+                          ...){
+
+  # Checks (make sure data is being passed from synthetic_control with predictors)
+  if(!all(c(".type",".outcome",".original_data",".meta") %in% colnames(data))){stop("Data must be passed from the `sythetic_control()` function.")}
+  if(!".predictors" %in% colnames(data)){ stop("Predictors must be generated prior to running using `generate_predictors()`.")}
+
+  # If no temporal window is set to use in the optimization task, use the entire
+  # pretreatment period
+  if(is.null(time_window)){ time_window <- data$.outcome[[1]]$time_unit }
+
+  # If placebo out version of the grab_ function, clear unnecessary fields
+  is_placebo = ifelse(any(data$.placebo == 1),T,F)
+  clear_placebo = function(.data){
+    if(".placebo" %in% colnames(.data)){
+      .data %>% dplyr::select(-.id,-.placebo)
+    }else{
+      .data
+    }
+  }
+
+  # Unpack the predictors used in the weighting task
+  treatment_unit_covariates <-
+    data %>%
+    grab_predictors("treated",placebo = is_placebo) %>%
+    clear_placebo(.) %>%
+    dplyr::select(-variable) %>%
+    as.matrix()
+
+  control_units_covariates <-
+    data %>%
+    grab_predictors("controls",placebo = is_placebo) %>%
+    clear_placebo(.) %>%
+    dplyr::select(-variable) %>%
+    as.matrix()
+
+
+  # Unpack the outcomes used in the weighting task
+  treatment_unit_outcome <-
+    data %>%
+    grab_outcome("treated",placebo = is_placebo) %>%
+    clear_placebo(.) %>%
+    dplyr::filter(time_unit %in% time_window) %>%
+    dplyr::select(-time_unit) %>%
+    as.matrix()
+
+  control_units_outcome <-
+    data %>%
+    grab_outcome("controls",placebo = is_placebo) %>%
+    clear_placebo(.) %>%
+    dplyr::filter(time_unit %in% time_window) %>%
+    dplyr::select(-time_unit) %>%
+    as.matrix()
+
+
+  # Implement the main fit method (Abadie et. al 2010)
+  fit <- synth_method(treatment_unit_covariates=treatment_unit_covariates,
+                      control_units_covariates=control_units_covariates,
+                      treatment_unit_outcome=treatment_unit_outcome,
+                      control_units_outcome=control_units_outcome,
+                      custom.v = custom_variable_weights,
+                      optimxmethod = optimization_method,
+                      genoud = genoud,
+                      quadopt = quadopt,
+                      Margin.ipop = Margin.ipop,
+                      Sigf.ipop = Sigf.ipop,
+                      Bound.ipop = Bound.ipop,
+                      verbose = verbose)
+
+  # **Simplify output to combine with main data nest**
+
+  # gather variable weights.
+  variable_weights <-
+    data %>%
+    grab_predictors(placebo = is_placebo) %>%
+    dplyr::transmute(variable,
+                     weight = as.numeric(fit$solution.v))
+
+  # gather control case assignment weights.
+  unit_weights <-
+    fit$solution.w %>%
+    as.data.frame(.) %>%
+    tibble::rownames_to_column(var = "unit") %>%
+    dplyr::rename(weight = w.weight)
+
+
+  # Return the input data with the control weights assigned.
+  fit_out <-
+    data %>%
+    dplyr::mutate(.unit_weights = list(unit_weights,unit_weights),
+                  .predictor_weights = list(variable_weights,variable_weights),
+                  .loss = list(tibble::tibble(variable_mspe = as.numeric(fit$loss.v[1]),
+                                              control_unit_mspe = as.numeric(fit$loss.w[1])),
+                               tibble::tibble(variable_mspe = as.numeric(fit$loss.v[1]),
+                                              control_unit_mspe = as.numeric(fit$loss.w[1])))
+    ) %>%
+    dplyr::select(.id:.predictors,
+                  .unit_weights,
+                  .predictor_weights,
+                  dplyr::everything())
+
+  # Return fit if requested
+  if(include_fit){
+    fit_out <- fit_out %>% dplyr::mutate(.fit=list(fit,fit))
+  }
+
+  return(fit_out)
 }
 
 
 
 #' generate_control
 #'
-#' @param data
+#' Uses the weights generated from `generate_weights()` to weight control units
+#' from the donor pool to denerate a synthetic version of the treated unit time
+#' series.
 #'
-#' @return
+#' @param data nested data of type `synth_tbl` generated from
+#' `sythetic_control()`. See `synthetic_control()` documentation for more
+#' information on how a `sythn_tbl` object is organized. In addition,
+#' `.unit_weights` must be generate using `generate_weights()`. See
+#' documentation for more information on how to generate weights.
+#'
+#' @return `synth_tbl` with nested fields containing the following:
+#'
+#'   - `.id`: unit id for the intervention case (this will differ when a placebo
+#'   unit).
+#'
+#'   - `.placebo`: indicator field taking on the value of 1 if a unit is a
+#'   placebo unit, 0 if it's the specified treated unit.
+#'
+#'   - `.type`: type of the nested data construct: `treated` or `controls`.
+#'   Keeps tract of which data construct is located in `.outcome` field.
+#'
+#'   - `.outcome`: nested data construct containing the outcome variable
+#'   configured for the sythnetic control method. Data is configured into a wide
+#'   format for the optimization task.
+#'
+#'   - `.predictors`: nested data construct containing the covariate matrices
+#'   for the treated and control (donor) units. Data is configured into a wide
+#'   format for the optimization task.
+#'
+#'   - `.synthetic_control`: nested data construct containing the synthetic
+#'   control version of the outcome variable generated from the unit weights.
+#'
+#'   - `.unit_weights`: Nested column of unit weights (i.e. how each unit from
+#'   the donor pool contributes to the synthetic control). Weights should sum to
+#'   1.
+#'
+#'   - `.predictor_weights`: Nested column of predictor variable weights (i.e.
+#'   the significance of each predictor in optimizing the weights that generate
+#'   the synthetic control). Weights should sum to 1. If variable weights are
+#'   provided, those variable weights are provided.
+#'
+#'   - `.original_data`: original impute data filtered by treated or control
+#'   units. This allows for easy processing down stream when generating
+#'   predictors.
+#'
+#'   - `.meta`: stores information regarding the unit and time index, the
+#'   treated unit and time and the name of the outcome variable. Used downstream
+#'   in subsequent functions.
+#'
+#'   - `.loss`: the RMPE loss for both sets of weights.
+#'
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=F) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_trends(time_window = 1970:2000)
+#'
+#' }
+#'
 generate_control <- function(data){
+  UseMethod("generate_control")
+}
 
+#' @export
+generate_control.synth_tbl <- function(data){
 
   # Auxiliary function to generate the synthetic control for a single version of
   # the data.
@@ -440,25 +1071,37 @@ generate_control <- function(data){
     if(!(".unit_weights" %in% colnames(data))){ stop("`.unit_weights` column has been removed. Run `generate_weights()` prior to running this function.")}
     if(!(".predictor_weights" %in% colnames(data))){ stop("`.predictor_weights` column has been removed. Run `generate_weights()` prior to running this function.")}
 
-    # grab metadata
+    # Grab metadata
     trt_time <- data$.meta[[1]]$treatment_time[1]
     trt_unit <- data$.meta[[1]]$treatment_unit[1]
     outcome_name <- data$.meta[[1]]$outcome[1]
     unit_index <- data$.meta[[1]]$unit_index[1]
     time_index <- data$.meta[[1]]$time_index[1]
 
+    # If placebo out version of the grab_ function, clear unnecessary fields
+    is_placebo = ifelse(any(data$.placebo == 1),T,F)
+    clear_placebo = function(.data){
+      if(".placebo" %in% colnames(.data)){
+        .data %>% dplyr::select(-.id,-.placebo)
+      }else{
+        .data
+      }
+    }
+
     # vector of unit weights
     W <-
       data %>%
-      grab_unit_weights() %>%
-      select(-unit) %>%
+      grab_unit_weights(placebo = is_placebo) %>%
+      clear_placebo(.) %>%
+      dplyr::select(-unit) %>%
       as.matrix()
 
     # coutcome time series for the control units
     outcome_controls <-
       data %>%
-      dplyr::filter(.type=="controls") %>%
+      dplyr::filter(.placebo == is_placebo,.type=="controls") %>%
       dplyr::select(.original_data)  %>%
+      tibble::as_tibble() %>%
       tidyr::unnest(cols = c(.original_data)) %>%
       dplyr::select(.data[[unit_index]],.data[[time_index]],.data[[outcome_name]]) %>%
       tidyr::spread(.data[[unit_index]],.data[[outcome_name]])
@@ -466,8 +1109,9 @@ generate_control <- function(data){
     # outcome time series for the treated unit
     outcome_treatment <-
       data %>%
-      dplyr::filter(.type=="treated") %>%
+      dplyr::filter(.placebo == is_placebo,.type=="treated") %>%
       dplyr::select(.original_data)  %>%
+      tibble::as_tibble() %>%
       tidyr::unnest(cols = c(.original_data)) %>%
       dplyr::select(y=.data[[outcome_name]])
 
@@ -489,7 +1133,7 @@ generate_control <- function(data){
     # Join the synetic control the nested frame and return
     out <-
       data %>%
-      dplyr::mutate(.synthetic_control = list(synthetic_output,NULL)) %>%
+      dplyr::mutate(.synthetic_control = list(synthetic_output,synthetic_output)) %>%
       dplyr::select(.id:.predictors,.synthetic_control,dplyr::everything())
 
     return(out)
@@ -508,526 +1152,10 @@ generate_control <- function(data){
       dplyr::bind_rows(master_nest,.)
   }
 
-  return(master_nest)
-}
-
-
-
-#' plot_trends
-#'
-#' @param data
-#' @param time_window
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plot_trends <- function(data,time_window=NULL){
-
-  # Check if .meta is in data.
-  if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
-
-  # Grab meta data
-  trt_time <- data$.meta[[1]]$treatment_time[1]
-  time_index <- data$.meta[[1]]$time_index[1]
-  outcome_name <- data$.meta[[1]]$outcome[1]
-
-  # If no time window is specified for the plot, plot the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
-
-  # Generate plot
-  data %>%
-    grab_synthetic_control(placebos = F) %>%
-    dplyr::filter(time_unit %in% time_window) %>%
-    dplyr::rename(Synthetic= synth_y,
-                  Observed= real_y) %>%
-    tidyr::pivot_longer(cols = c(Observed,Synthetic)) %>%
-    ggplot2::ggplot(ggplot2::aes(time_unit,value,color=name,linetype=name)) +
-    ggplot2::geom_vline(xintercept = trt_time,color="black",linetype=2) +
-    ggplot2::geom_line(size=1,alpha=.7) +
-    ggplot2::geom_point() +
-    ggplot2::scale_color_manual(values=c("grey50","#b41e7c")) +
-    ggplot2::scale_linetype_manual(values=c(1,4)) +
-    ggplot2::labs(color="",linetype="",y=outcome_name,x=time_index,
-                  title=paste0("Time Series of the synthetic and observed ",outcome_name)) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.position = "bottom")
-}
-
-
-#' plot_difference
-#'
-#' @param data
-#' @param time_window
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plot_differences <- function(data,time_window=NULL){
-
-  # Check if .meta is in data.
-  if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
-
-  # Grab meta data
-  trt_time <- data$.meta[[1]]$treatment_time[1]
-  time_index <- data$.meta[[1]]$time_index[1]
-  treatment_unit <- data$.meta[[1]]$treatment_unit[1]
-  outcome_name <- data$.meta[[1]]$outcome[1]
-
-  # If no time window is specified for the plot, plot the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
-
-  # Generate plot
-  data %>%
-    grab_synthetic_control(placebos = F) %>%
-    dplyr::mutate(diff = real_y-synth_y) %>%
-    dplyr::filter(time_unit %in% time_window) %>%
-    ggplot2::ggplot(ggplot2::aes(time_unit,diff)) +
-    ggplot2::geom_hline(yintercept = 0,color="black",linetype=2) +
-    ggplot2::geom_vline(xintercept = trt_time,color="black") +
-    ggplot2::geom_line(size=1,alpha=.75,color="#b41e7c") +
-    ggplot2::geom_point(color="#b41e7c") +
-    ggplot2::labs(color="",linetype="",y=outcome_name,x=time_index,
-                  title=paste0("Difference in the synthetic control and observed ",treatment_unit)) +
-    ggplot2::theme_minimal()
-}
-
-
-#' plot_placebos
-#'
-#' @param data
-#' @param time_window
-#' @param prune
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plot_placebos <- function(data,time_window=NULL,prune=T){
-
-  # Check if .meta is in data.
-  if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
-
-  # Grab meta data
-  trt_time <- data$.meta[[1]]$treatment_time[1]
-  time_index <- data$.meta[[1]]$time_index[1]
-  treatment_unit <- data$.meta[[1]]$treatment_unit[1]
-  unit_index <- data$.meta[[1]]$unit_index[1]
-  outcome_name <- data$.meta[[1]]$outcome[1]
-
-  # If no time window is specified for the plot, plot the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
-
-  # Generate plot data
-  plot_data <-
-    data %>%
-    grab_synthetic_control(placebos = T) %>%
-    dplyr::mutate(diff = real_y-synth_y) %>%
-    dplyr::filter(time_unit %in% time_window) %>%
-    dplyr::mutate(type_text = ifelse(.placebo==0,treatment_unit,"control units"),
-                  type_text = factor(type_text,level=c(treatment_unit,"control units")))
-
-
-  # Pruning implementation-- if one of the donors falls outside two standard
-  # deviations of the rest of the pool, it's dropped.
-  caption <- ""
-  if (prune){
-
-    # Gather significance field
-    sig_data = data %>% grab_signficance(time_window = time_window)
-
-    # Treated units Pre-Period RMSPE
-    thres <-
-      sig_data %>%
-      dplyr::filter(type=="Treated") %>%
-      dplyr::pull(pre_rmspe)
-
-    # Only retain units that are 2 times the treated unit RMSPE.
-    retain_ <-
-      sig_data %>%
-      dplyr::select(unit_name,pre_rmspe) %>%
-      dplyr::filter(pre_rmspe <= thres*2) %>%
-      dplyr::pull(unit_name)
-
-    plot_data <- plot_data %>% dplyr::filter(.id %in% retain_)
-    caption <- "Pruned cases with pre-period RMSPE exceeding two times the treated units pre-period RMSPE."
-  }
-
-  # Generate plot
-  plot_data %>%
-    ggplot2::ggplot(ggplot2::aes(time_unit,diff,group=.id,
-                                 color=type_text,
-                                 alpha=type_text,
-                                 size=type_text)) +
-    ggplot2::geom_hline(yintercept = 0,color="black",linetype=2) +
-    ggplot2::geom_vline(xintercept = trt_time,color="black",linetype=3) +
-    ggplot2::geom_line() +
-    ggplot2::scale_color_manual(values=c("#b41e7c","grey60")) +
-    ggplot2::scale_alpha_manual(values=c(1,.4)) +
-    ggplot2::scale_size_manual(values=c(1,.5)) +
-    ggplot2::labs(color="",alpha="",y=outcome_name,x=time_index,
-                  title=paste0("Difference of each '",unit_index,"' in the donor pool"),
-                  caption = caption) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.position="bottom")
+  return(as_synth(master_nest))
 }
 
 
 
 
 
-#' plot_weights
-#'
-#' @param .data
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plot_weights <- function(.data){
-
-  # Combine the different type of weight outputs
-  dplyr::bind_rows(
-
-    grab_unit_weights(.data,placebo = F) %>%
-      dplyr::mutate(type="Control Unit Weights (W)"),
-
-    grab_predictor_weights(.data,placebo = F) %>%
-      dplyr::mutate(type="Variable Weights (V)") %>%
-      dplyr::rename(unit = variable)
-
-  ) %>%
-
-    # Generate plot
-    dplyr::arrange(weight) %>%
-    dplyr::mutate(unit = forcats::fct_reorder(unit,weight)) %>%
-    ggplot2::ggplot(ggplot2::aes(unit,weight,fill=type,color=type)) +
-    ggplot2::geom_col(show.legend = F,alpha=.65) +
-    ggplot2::coord_flip() +
-    ggplot2::labs(x="") +
-    ggplot2::facet_wrap(~type,ncol = 2,scales="free") +
-    ggplot2::theme_minimal() +
-    ggplot2::scale_fill_manual(values=c("#b41e7c","grey60")) +
-    ggplot2::scale_color_manual(values=c("#b41e7c","grey60")) +
-    ggplot2::theme(text = ggplot2::element_text(size = 14))
-}
-
-
-#' plot_rmspe_ratio
-#'
-#' @param data
-#' @param time_window
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plot_rmspe_ratio <- function(data,time_window=NULL){
-  data %>%
-    grab_signficance(time_window=time_window) %>%
-    mutate(unit_name = forcats::fct_reorder(as.character(unit_name),rmspe_ratio)) %>%
-    ggplot2::ggplot(ggplot2::aes(unit_name,
-                                 rmspe_ratio,
-                                 fill=type,color=type)) +
-    ggplot2::geom_col(alpha=.65) +
-    ggplot2::coord_flip() +
-    ggplot2::geom_point() +
-    ggplot2::labs(y = "Post-Period RMSPE / Pre-Period RMSPE",x="",fill="",color="") +
-    ggplot2::scale_fill_manual(values=c("grey50","#b41e7c")) +
-    ggplot2::scale_color_manual(values=c("grey50","#b41e7c")) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.position = "bottom")
-}
-
-
-
-#' grab_unit_weights
-#'
-#' @param data
-#' @param placebo
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_unit_weights <- function(data,placebo=F){
-
-  # Check if .unit_weights is in data.
-  if(!(".unit_weights" %in% colnames(data))){
-    stop("`.unit_weights` column has been removed. Please run `fit_weights()` to generate this data field.")
-  }
-
-  # Check if there is a placebo option exists
-  option_exist <- length(unique(data$.placebo))>1
-
-  if(placebo | (!option_exist)){
-
-    data %>%
-      dplyr::filter(.type=="controls") %>%
-      dplyr::select(.unit_weights) %>%
-      tidyr::unnest(.unit_weights)
-
-  }else{
-
-    data %>%
-      dplyr::filter(.placebo==0) %>%
-      dplyr::filter(.type=="controls") %>%
-      dplyr::select(.unit_weights) %>%
-      tidyr::unnest(.unit_weights)
-
-  }
-}
-
-
-
-#' grab_predictors
-#'
-#' @param data
-#' @param type
-#' @param placebo
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_predictors <- function(data,type="treated",placebo=F){
-
-  # Checks
-  if(!".predictors" %in% colnames(data)){ stop("Predictors must be generated prior to running using `generate_predictors()`.")}
-
-  # Check if there is a placebo option exists
-  option_exist <- length(unique(data$.placebo))>1
-
-  if(placebo | (!option_exist)){
-
-    data %>%
-      dplyr::filter(.type==type) %>%
-      dplyr::select(.predictors) %>%
-      tidyr::unnest(cols=c(.predictors))
-
-  }else{
-
-    data %>%
-      dplyr::filter(.placebo==0) %>%
-      dplyr::filter(.type==type) %>%
-      dplyr::select(.predictors) %>%
-      tidyr::unnest(cols=c(.predictors))
-
-  }
-}
-
-
-#' grab_outcomes
-#'
-#' @param data
-#' @param type
-#' @param placebo
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_outcomes <- function(data,type="treated",placebo=F){
-
-  # Check if there is a placebo option exists
-  option_exist <- length(unique(data$.placebo))>1
-
-  if(placebo | (!option_exist)){
-
-    data %>%
-      dplyr::filter(.type==type) %>%
-      dplyr::select(.outcome) %>%
-      tidyr::unnest(cols=c(.outcome))
-
-  }else{
-
-    data %>%
-      dplyr::filter(.placebo==0) %>%
-      dplyr::filter(.type==type) %>%
-      dplyr::select(.outcome) %>%
-      tidyr::unnest(cols=c(.outcome))
-
-  }
-
-}
-
-
-#' grab_predictor_weights
-#'
-#' @param data
-#' @param placebo
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_predictor_weights <- function(data,placebo=F){
-
-  # Check if .predictor_weights is in data.
-  if(!(".predictor_weights" %in% colnames(data))){
-    stop("`.predictor_weights` column has been removed. Please run `fit_weights()` to generate this data field.")
-  }
-
-  if(placebo){
-
-    data %>%
-      dplyr::filter(.type=="controls") %>%
-      dplyr::select(.predictor_weights) %>%
-      tidyr::unnest(.predictor_weights)
-
-  } else {
-
-    data %>%
-      dplyr::filter(.placebo==0) %>%
-      dplyr::filter(.type=="controls") %>%
-      dplyr::select(.predictor_weights) %>%
-      tidyr::unnest(.predictor_weights)
-
-  }
-
-}
-
-#' grab_loss
-#'
-#' @param data
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_loss <- function(data){
-
-  # Check if .loss is in data.
-  if(!(".loss" %in% colnames(data))){
-    stop("`.loss` column has been removed. Please run `fit_weights()` to generate this data field.")
-  }
-
-  data %>%
-    dplyr::select(.loss) %>%
-    tidyr::unnest(cols = c(.loss))
-}
-
-
-#' grab_synthetic_control
-#'
-#' @param data
-#' @param placebos
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_synthetic_control <- function(data,placebos=T){
-
-  # Check if .synthetic_control is in data.
-  if(!(".synthetic_control" %in% colnames(data))){
-    stop("`.synthetic_control` column has been removed. Please run `generate_control()` to generate this data field.")
-  }
-
-  if(placebos){
-    data %>%
-      dplyr::filter(.type=="treated") %>%
-      dplyr::select(.id,.placebo,.synthetic_control) %>%
-      tidyr::unnest(.synthetic_control)
-  }else{
-    data %>%
-      dplyr::filter(.placebo==0,.type=="treated") %>%
-      dplyr::select(.synthetic_control) %>%
-      tidyr::unnest(.synthetic_control)
-  }
-
-}
-
-
-
-#' grab_signficance
-#'
-#' @param data
-#' @param time_window
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_signficance <- function(data,time_window = NULL){
-
-  # Check if .synthetic_control is in data.
-  if(!(".synthetic_control" %in% colnames(data))){stop("`.synthetic_control` column has been removed. Please run `generate_control()` to generate this data field.")}
-  if(!(".meta" %in% colnames(data))){ stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
-
-
-  # Grab meta data
-  trt_time <- data$.meta[[1]]$treatment_time
-  time_index <- data$.meta[[1]]$time_index
-
-  # If no time window is specified for the table, calculate the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
-
-  # Formulate the output data using the donor and treated synthetic controls
-  data %>%
-    grab_synthetic_control(placebos = T) %>%
-    dplyr::filter(time_unit %in% time_window) %>%
-    dplyr::group_by(.id, period = ifelse(time_unit <= trt_time,"pre_rmspe","post_rmspe"))  %>%
-    dplyr::summarize(.placebo = mean(.placebo),
-                     rmspe = sqrt(sum((real_y - synth_y)^2)/n()) ) %>%
-    tidyr::pivot_wider(names_from = period,values_from = rmspe) %>%
-    dplyr::mutate(rmspe_ratio = post_rmspe/pre_rmspe) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(dplyr::desc(rmspe_ratio)) %>%
-    dplyr::mutate(rank = dplyr::row_number(),
-                  fishers_exact_pvalue = rank / max(rank),
-                  z_score = (rmspe_ratio-mean(rmspe_ratio))/sd(rmspe_ratio),
-                  type = ifelse(.placebo==0,"Treated","Donor")) %>%
-    dplyr::select(unit_name=.id,type,pre_rmspe,post_rmspe,dplyr::everything(),-.placebo)
-}
-
-
-
-#' grab_comparison_table
-#'
-#' @param data
-#'
-#' @return
-#' @export
-#'
-#' @examples
-grab_balance_table <- function(data){
-
-  # Checks
-  if(!(".meta" %in% colnames(data))){ stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
-  if(!(".unit_weights" %in% colnames(data))){ stop("`.unit_weights` column has been removed. Run `generate_weights()` prior to running this function.")}
-  if(!(".predictor_weights" %in% colnames(data))){ stop("`.predictor_weights` column has been removed. Run `generate_weights()` prior to running this function.")}
-
-
-  # Treated mean values
-  treated_values <-
-    data %>%
-    grab_predictors(type="treated",placebo = F)
-
-  # Synthetic Control Weighted Values
-  control_values =
-    data %>%
-    grab_predictors(type="controls") %>%
-    tidyr::gather(unit,value,-variable) %>%
-    dplyr::left_join(grab_unit_weights(data),by="unit") %>%
-    dplyr::mutate(value_adjusted = value*weight) %>%
-    dplyr::group_by(variable) %>%
-    dplyr::summarize(synthetic_values = sum(value_adjusted))
-  colnames(control_values)[2] = paste0("synthetic_",colnames(treated_values)[2])
-
-  # Donor mean values
-  donor_values <-
-    data %>%
-    grab_predictors(type="controls") %>%
-    tidyr::gather(unit,value,-variable) %>%
-    dplyr::group_by(variable) %>%
-    dplyr::summarize(donor_sample = mean(value))
-
-  # Combine as a table
-  table_ <-
-    dplyr::left_join(treated_values,control_values,by='variable') %>%
-    dplyr::left_join(donor_values,by='variable')
-
-  return(table_)
-}
