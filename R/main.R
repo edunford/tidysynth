@@ -250,8 +250,6 @@ synthetic_control.data.frame <- function(data = NULL,
 #'
 #' @return An object of class `synth_tbl`
 #' @export
-#'
-#' @examples
 as_synth <- function(.data, ...){
   UseMethod("as_synth")
 }

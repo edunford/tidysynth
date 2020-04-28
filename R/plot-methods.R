@@ -3,13 +3,72 @@
 
 #' plot_trends
 #'
-#' @param data
-#' @param time_window
+#' Plot the observed and synthetic trends for the treated units.
 #'
-#' @return
+#' Synthetic control is a visual-based method, like Regression Discontinuity, so
+#' inspection of the pre-intervention period fits is key assessing the sythetic
+#' control's fit. A poor fit in the pre-period reduces confidence in the
+#' post-period trend capturing the counterfactual.
+#'
+#' See `?generate_control()` for information on how to generate a synthetic
+#' control unit.
+#'
+#' @param data nested data of type `synth_tbl`.
+#' @param time_window time window of the trend plot.
+#'
+#' @return `ggplot` object of the observed and synthetic trends.
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=T) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_trends(time_window = 1970:2000)
+#'
+#' }
+#'
+#'
 plot_trends <- function(data,time_window=NULL){
   UseMethod("plot_trends")
 }
@@ -51,13 +110,69 @@ plot_trends.synth_tbl <- function(data,time_window=NULL){
 
 #' plot_difference
 #'
-#' @param data
-#' @param time_window
+#' Plot the difference between the observed and sythetic control unit. The
+#' difference captures the causal quantity (i.e. the magnitude of the difference
+#' between the observed and counterfactual case).
+#'
+#' @param data nested data of type `synth_tbl`.
+#' @param time_window time window of the trend plot.
+#'
+#' @return `ggplot` object of the difference between the observed and synthetic
+#'   trends.
 #'
 #' @return
 #' @export
 #'
 #' @examples
+#'
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=T) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_differences(time_window = 1970:2000)
+#'
+#' }
+#'
 plot_differences <- function(data,time_window=NULL){
   UseMethod("plot_differences")
 }
@@ -95,14 +210,81 @@ plot_differences <- function(data,time_window=NULL){
 
 #' plot_placebos
 #'
-#' @param data
-#' @param time_window
-#' @param prune
+#' Plot the difference between the observed and sythetic control unit for the
+#' treated and the placebo units. The difference captures the causal quantity
+#' (i.e. the magnitude of the difference between the observed and counterfactual
+#' case). Plotting the actual treated observation against the placebos captures
+#' the likelihood (or rarity) of the observed differenced trend.
 #'
-#' @return
+#'
+#' The function provides a pruning rule where all placebo cases with a
+#' pre-period root mean squared predictive error (RMSPE) exceeding two times the
+#' treated unit pre-period RMSPE are pruned. This helps overcome scale issues
+#' when a particular placebo case has poor fit in the pre-period.
+#'
+#' See documentation on `?synthetic_control` on how to generate placebo cases.
+#' When initializing a `synth_tbl`, set the `generate_placebos` argument to
+#' `TRUE`. The processing pipeline remains the same.
+#'
+#' @param data nested data of type `synth_tbl`.
+#' @param time_window time window of the trend plot.
+#' @param prune boolean flag; if TRUE, then all placebo cases with a pre-period
+#'   RMSPE exceeding two times the treated unit pre-period RMSPE are pruned;
+#'   Default is TRUE.
+#'
+#' @return `ggplot` object of the difference between the observed and synthetic
+#'   trends for the treated and placebo units.
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=T) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_placebos(time_window = 1970:2000)
+#'
+#' }
+#'
 plot_placebos <- function(data,time_window=NULL,prune=T){
   UseMethod("plot_placebos")
 }
@@ -156,7 +338,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
       dplyr::pull(unit_name)
 
     plot_data <- plot_data %>% dplyr::filter(.id %in% retain_)
-    caption <- "Pruned cases with pre-period RMSPE exceeding two times the treated units pre-period RMSPE."
+    caption <- "Pruned all placebo cases with a pre-period RMSPE exceeding two times the treated unit's pre-period RMSPE."
   }
 
   # Generate plot
@@ -171,7 +353,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
     ggplot2::scale_color_manual(values=c("#b41e7c","grey60")) +
     ggplot2::scale_alpha_manual(values=c(1,.4)) +
     ggplot2::scale_size_manual(values=c(1,.5)) +
-    ggplot2::labs(color="",alpha="",y=outcome_name,x=time_index,
+    ggplot2::labs(color="",alpha="",size="",y=outcome_name,x=time_index,
                   title=paste0("Difference of each '",unit_index,"' in the donor pool"),
                   caption = caption) +
     ggplot2::theme_minimal() +
@@ -182,12 +364,64 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
 
 #' plot_weights
 #'
-#' @param .data
+#' Plot the unit and predictor variable weights generated using `generate_weights()`
 #'
-#' @return
+#' See `grab_unit_weights()` and `grab_predictor_weights()`
+#'
+#' @param data nested data of type `synth_tbl`.
+#'
+#' @return a `ggplot` object that plots the unit and variable weights.
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=T) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_weights()
+#'
+#' }
+#'
 plot_weights <- function(.data){
   UseMethod("plot_weights")
 }
@@ -224,13 +458,88 @@ plot_weights <- function(.data){
 
 #' plot_mspe_ratio
 #'
-#' @param data
-#' @param time_window
+#' Plot the MSPE ratios for each case (observed and placebos). The ratio is used
+#' for inference in the synthetic control setup. The following plot ranks the
+#' RMSE ratio's in descending order.
 #'
-#' @return
+#' Inferential statitics are generated by comparing the observed difference
+#' between the actual treated unit and its synthetic control to each placebo
+#' unit and its synthetic control. The rarity of the actual to the placebo is
+#' used to infer the likelihood of observing the effect.
+#'
+#' Inference in this framework leverages the mean squared predictive error
+#' (MSPE) of the fit in the pre-period to the fit in the post-period as a ratio.
+#'
+#' \deqn{\frac{RMSE_{Post}}{RMSE_{Pre}}}
+#'
+#' The ratio captures the differences between the pre-intervention fit and the
+#' post-intervention divergence of the trend (i.e. the causal quantity). A good
+#' fit in the pre-period denotes that the observed and synthetic case tracked
+#' well together. Divergence in the post-period captures the difference brought
+#' about by the intervention in the two trends. Thus, when the ratio is high, we
+#' observe more of a difference between the two trends. If, however, the
+#' pre-period fit is poor, or there is not substantial divergence in the
+#' post-period, then this ratio amount will be smaller. A more detailed outline
+#' of inference within the synthetic control framework can be found in Adabie et
+#' al. 2010.
+#'
+#'
+#' @param data nested data of type `synth_tbl`.
+#' @param time_window time window that the pre- and post-period values should be
+#'   used to compute the MSPE ratio.
+#'
+#' @return `ggplot` object plotting the MSPE ratios by case.
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#'
+#' # Smoking example data
+#' data(smoking)
+#'
+#' smoking_out <-
+#' smoking %>%
+#'
+#' # initial the synthetic control object
+#' synthetic_control(outcome = cigsale,
+#'                   unit = state,
+#'                   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 1988,
+#'                   generate_placebos=T) %>%
+#'
+#' # Generate the aggregate predictors used to generate the weights
+#'   generate_predictor(time_window=1980:1988,
+#'                      lnincome = mean(lnincome, na.rm = T),
+#'                      retprice = mean(retprice, na.rm = T),
+#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1984:1988,
+#'                      beer = mean(beer, na.rm = T)) %>%
+#'
+#'   generate_predictor(time_window=1975,
+#'                      cigsale_1975 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1980,
+#'                      cigsale_1980 = cigsale) %>%
+#'
+#'   generate_predictor(time_window=1988,
+#'                      cigsale_1988 = cigsale) %>%
+#'
+#'
+#'   # Generate the fitted weights for the synthetic control
+#'   generate_weights(optimization_window =1970:1988,
+#'                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+#'
+#'   # Generate the synthetic control
+#'   generate_control()
+#'
+#' # Plot the observed and synthetic trend
+#' smoking_out %>% plot_mspe_ratio(time_window = 1970:2000)
+#'
+#' }
+#'
 plot_mspe_ratio <- function(data,time_window=NULL){
   UseMethod("plot_mspe_ratio")
 }
@@ -246,7 +555,8 @@ plot_mspe_ratio <- function(data,time_window=NULL){
     ggplot2::geom_col(alpha=.65) +
     ggplot2::coord_flip() +
     ggplot2::geom_point() +
-    ggplot2::labs(y = "Post-Period MSPE / Pre-Period MSPE",x="",fill="",color="") +
+    ggplot2::labs(y = "Post-Period MSPE / Pre-Period MSPE",x="",fill="",color="",
+                  title="Ratio of the pre and post intervention period mean squared predictive error") +
     ggplot2::scale_fill_manual(values=c("grey50","#b41e7c")) +
     ggplot2::scale_color_manual(values=c("grey50","#b41e7c")) +
     ggplot2::theme_minimal() +

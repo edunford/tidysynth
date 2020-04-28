@@ -7,11 +7,69 @@
 plot_differences(data, time_window = NULL)
 }
 \arguments{
-\item{time_window}{}
+\item{data}{nested data of type \code{synth_tbl}.}
+
+\item{time_window}{time window of the trend plot.}
 }
 \value{
+\code{ggplot} object of the difference between the observed and synthetic
+trends.
+
 
 }
 \description{
-plot_difference
+Plot the difference between the observed and sythetic control unit. The
+difference captures the causal quantity (i.e. the magnitude of the difference
+between the observed and counterfactual case).
+}
+\examples{
+
+
+\dontrun{
+
+# Smoking example data
+data(smoking)
+
+smoking_out <-
+smoking \%>\%
+
+# initial the synthetic control object
+synthetic_control(outcome = cigsale,
+                  unit = state,
+                  time = year,
+                  i_unit = "California",
+                  i_time = 1988,
+                  generate_placebos=T) \%>\%
+
+# Generate the aggregate predictors used to generate the weights
+  generate_predictor(time_window=1980:1988,
+                     lnincome = mean(lnincome, na.rm = T),
+                     retprice = mean(retprice, na.rm = T),
+                     age15to24 = mean(age15to24, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1984:1988,
+                     beer = mean(beer, na.rm = T)) \%>\%
+
+  generate_predictor(time_window=1975,
+                     cigsale_1975 = cigsale) \%>\%
+
+  generate_predictor(time_window=1980,
+                     cigsale_1980 = cigsale) \%>\%
+
+  generate_predictor(time_window=1988,
+                     cigsale_1988 = cigsale) \%>\%
+
+
+  # Generate the fitted weights for the synthetic control
+  generate_weights(optimization_window =1970:1988,
+                   Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) \%>\%
+
+  # Generate the synthetic control
+  generate_control()
+
+# Plot the observed and synthetic trend
+smoking_out \%>\% plot_differences(time_window = 1970:2000)
+
+}
+
 }

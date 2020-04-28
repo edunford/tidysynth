@@ -13,7 +13,7 @@ grab_loss(data)
 tibble data frame
 }
 \description{
-Grab the weights RMSE loss from the optimization task from the \code{synth_tbl}.
+Extract the RMSE loss of the optimized weights from the \code{synth_tbl}.
 }
 \examples{
 

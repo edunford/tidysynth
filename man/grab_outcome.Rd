@@ -19,7 +19,7 @@ available). Default is FALSE.}
 tibble data frame
 }
 \description{
-Grab the outcome variable from the \code{synth_tbl}.
+Extract a data frame containing the outcome variable from the \code{synth_tbl}.
 }
 \examples{
 

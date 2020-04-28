@@ -16,8 +16,8 @@ available). Default is FALSE.}
 tibble data frame
 }
 \description{
-Grab the synthetic  control generated using \code{generate_control()}from the
-\code{synth_tbl}.
+Extract the synthetic control as a data frame generated using
+\code{generate_control()} from the \code{synth_tbl}.
 }
 \examples{
 

@@ -28,10 +28,6 @@ NULL
 #'
 #' @source \url{https://economics.mit.edu/files/11859}
 #'
-#' @example
-#'
-#' data(smoking)
-#'
 'smoking'
 
 
