@@ -12,7 +12,7 @@ The packages makes the following improvements:
 
 - generates placebo synthetic controls on the fly allowing one to generate inferential statistics and plots without needing to write further code;
 - offers plotting methods to easily explore the fit of the synthetic control and weights;
-- relies on a nested tidy data structure with `grab_` prefix function to easily extract different aspects of the pipeline used to generate the synthetic control, increasing usability.
+- relies on a nested tidy data structure with `grab_` prefix functions to easily extract different aspects of the pipeline used to generate the synthetic control, increasing usability and data visibility.
 
 ## Installation
 
@@ -33,14 +33,14 @@ The package uses pipeline of functions to generate the synthetic control.
 | `generate_weigths()` | fits the unit and predictor weights used to generate the synthetic control. |
 | `generate_control()` | generates the synthetic control using the optimized weights. |
 
-The following example comes from Abadie et. al 2010, which evaluates the impact of Proposition 99 on cigarette consumption in California. Proposition 99 greatly increased funding to anti-smoking campaigns and imposed a 25 cent tax on a pack og cigarettes
+The following example comes from Abadie et. al 2010, which evaluates the impact of Proposition 99 on cigarette consumption in California. Proposition 99 greatly increased funding to anti-smoking campaigns and imposed a 25 cent tax on cigarettes
 ```{r,message=F}
 require(tidysynth)
 data("smoking")
 smoking %>% dplyr::glimpse()
 ```
 
-Let's generate a synthetic California using information from the "donor pool", which is composed of control states where a law like Proposition 99 wasn't implemented. This is the pool of potential cases from which we borrow information when fitting to the observed California in the pre-intervention period.
+The method aims to generate a synthetic California using information from a pool of control states where a law like Proposition 99 was not implemented. This "donor pool" holds the case comparisons from which we borrow information from to generate a synthetic version of California.
 
 ```{r,cache=T}
 smoking_out <-
@@ -83,14 +83,14 @@ smoking_out <-
   generate_control()
 ```
 
-Once the synthetic control is generated, one can easily assess the fit... 
+Once the synthetic control is generated, one can easily assess the fit by looking at the trends of the synthetic and observed time series.  
 
 ```{r,fig.align="center",fig.width=10,fig.height=5,dpi=300}
 smoking_out %>% plot_trends()
 ```
 
 
-...and the post-intervention period difference, which reflects the causal effect (i.e. the difference between the observed and counterfactual).
+To capture the causal effect (i.e. the difference between the observed and counterfactual), we can plot the differences. 
 
 ```{r,fig.align="center",fig.width=10,fig.height=5,dpi=300}
 smoking_out %>% plot_differences()
@@ -169,3 +169,10 @@ Note that most all the `grab_` functions allow for extraction of the placebo uni
 ```{r}
 smoking_out %>% grab_synthetic_control(placebo=T)
 ```
+
+
+## Debugging
+
+Spot an issue? Please let me know by posting an issue.
+
+

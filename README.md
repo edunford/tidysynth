@@ -17,9 +17,9 @@ The packages makes the following improvements:
     further code;
   - offers plotting methods to easily explore the fit of the synthetic
     control and weights;
-  - relies on a nested tidy data structure with `grab_` prefix function
+  - relies on a nested tidy data structure with `grab_` prefix functions
     to easily extract different aspects of the pipeline used to generate
-    the synthetic control, increasing usability.
+    the synthetic control, increasing usability and data visibility.
 
 ## Installation
 
@@ -44,7 +44,7 @@ control.
 The following example comes from Abadie et. al 2010, which evaluates the
 impact of Proposition 99 on cigarette consumption in California.
 Proposition 99 greatly increased funding to anti-smoking campaigns and
-imposed a 25 cent tax on a pack og cigarettes
+imposed a 25 cent tax on cigarettes
 
 ``` r
 require(tidysynth)
@@ -62,11 +62,10 @@ smoking %>% dplyr::glimpse()
     ## $ age15to24 <dbl> 0.1831579, 0.1780438, 0.1765159, 0.1615542, 0.1851852, 0.17…
     ## $ retprice  <dbl> 39.3, 39.9, 30.6, 38.9, 34.3, 38.4, 31.4, 37.3, 36.7, 28.8,…
 
-Let’s generate a synthetic California using information from the “donor
-pool”, which is composed of control states where a law like Proposition
-99 wasn’t implemented. This is the pool of potential cases from which we
-borrow information when fitting to the observed California in the
-pre-intervention period.
+The method aims to generate a synthetic California using information
+from a pool of control states where a law like Proposition 99 was not
+implemented. This “donor pool” holds the case comparisons from which we
+borrow information from to generate a synthetic version of California.
 
 ``` r
 smoking_out <-
@@ -109,8 +108,9 @@ smoking_out <-
   generate_control()
 ```
 
-Once the synthetic control is generated, one can easily assess the
-fit…
+Once the synthetic control is generated, one can easily assess the fit
+by looking at the trends of the synthetic and observed time
+series.
 
 ``` r
 smoking_out %>% plot_trends()
@@ -118,9 +118,9 @@ smoking_out %>% plot_trends()
 
 <img src="README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
-…and the post-intervention period difference, which reflects the causal
-effect (i.e. the difference between the observed and
-counterfactual).
+To capture the causal effect (i.e. the difference between the observed
+and counterfactual), we can plot the
+differences.
 
 ``` r
 smoking_out %>% plot_differences()
@@ -320,6 +320,10 @@ smoking_out %>% grab_synthetic_control(placebo=T)
     ##  9 California        0      1978   126.    125.
     ## 10 California        0      1979   122.    122.
     ## # … with 1,199 more rows
+
+## Debugging
+
+Spot an issue? Please let me know by posting an issue.
 
 1.  Note this implies that you’d need at least 20 cases in the donor
     pool to get a conventional p-value (.05).
