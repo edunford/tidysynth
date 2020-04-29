@@ -548,7 +548,7 @@ plot_mspe_ratio <- function(data,time_window=NULL){
 plot_mspe_ratio <- function(data,time_window=NULL){
   data %>%
     grab_signficance(time_window=time_window) %>%
-    mutate(unit_name = forcats::fct_reorder(as.character(unit_name),mspe_ratio)) %>%
+    dplyr::mutate(unit_name = forcats::fct_reorder(as.character(unit_name),mspe_ratio)) %>%
     ggplot2::ggplot(ggplot2::aes(unit_name,
                                  mspe_ratio,
                                  fill=type,color=type)) +

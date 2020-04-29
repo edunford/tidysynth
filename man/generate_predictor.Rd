@@ -45,12 +45,11 @@ in subsequent functions.
 }
 }
 \description{
-Create one or more scalar variables summarizing the variables across a
-specific time window as predictor features to be uses as covariates in the
-pre-treatment matching step to generate the synthetic control.
+Create one or more scalar variables summarizing covariate data across a
+specified time window. These predictor variables are used to fit the
+synthetic control.
 }
 \details{
-Specifically, \code{generate_predictor()} generates the \eqn{X_1} and \eqn{X_0}
 matrices of aggregate-level covariates to be used in the following
 minimization task.
 
