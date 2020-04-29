@@ -21,3 +21,5 @@ Imports:
     tidyr,
     forcats,
     rlang
+Suggests: 
+    testthat

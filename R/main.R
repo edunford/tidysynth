@@ -735,9 +735,11 @@ generate_weights.synth_tbl <-function(data,
   for (v in data_versions){
 
     # Progress reports
-    if(second_pass){cat("Generating weights for the placebo units.\n");second_pass <- F}
-    if(first_pass){cat("Generating weights for the intervention unit.\n");second_pass <- T}
-    pb$tick()$print()
+    if(verbose){
+      if(second_pass){cat("Generating weights for the placebo units.\n");second_pass <- F}
+      if(first_pass){cat("Generating weights for the intervention unit.\n");second_pass <- T}
+      pb$tick()$print()
+    }
 
     # Generate weight for the data version
     master_nest <-
@@ -838,7 +840,7 @@ synth_weights <- function(data,
                           Margin.ipop = 5e-04,
                           Sigf.ipop = 5,
                           Bound.ipop = 10,
-                          verbose = F,
+                          verbose = verbose,
                           ...){
 
   # Checks (make sure data is being passed from synthetic_control with predictors)
@@ -921,7 +923,8 @@ synth_weights <- function(data,
     fit$solution.w %>%
     as.data.frame(.) %>%
     tibble::rownames_to_column(var = "unit") %>%
-    dplyr::rename(weight = w.weight)
+    dplyr::rename(weight = w.weight) %>%
+    tibble::as_tibble(.)
 
 
   # Return the input data with the control weights assigned.
