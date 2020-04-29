@@ -240,9 +240,9 @@ control and the `plot_` prefix functions for visualizing the output,
 there are also a number of `grab_` prefix functions that allow one
 easily to grab the data contained within a `synth_tbl` object.
 
-Note that at its core, a `synth_tbl` is just a tidy nested data frame,
+Note that at its core, a `synth_tbl` is just a nested tibble data frame,
 where each component of the synthetic control pipeline is appended on as
-the function is fun.
+each function is run.
 
 ``` r
 smoking_out
