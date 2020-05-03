@@ -20,6 +20,10 @@ Imports:
     ggplot2,
     tidyr,
     forcats,
-    rlang
+    rlang,
+    kernlab,
+    LowRankQP,
+    rgenoud,
+    optimx
 Suggests: 
     testthat
