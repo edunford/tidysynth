@@ -3,48 +3,46 @@
 
 ## Overview
 
-`tidysynth` offers a tidy implementation the synthetic control method
-(see Abadie et al. 2003, 2010, 2015). Building on [prior
-packages](https://cran.r-project.org/web/packages/Synth/Synth.pdf),
-`tidysynth` makes a number of needed improvements when implementing the
-method in `R`. Increasing the user’s capacity to inspect, visualize, and
-tune the synthetic control.
+`tidysynth` offers a tidy implementation the synthetic control method in
+`R` (see Abadie et al. 2003, 2010, 2015). Building on the
+[`Synth`](https://cran.r-project.org/web/packages/Synth/Synth.pdf)
+package, `tidysynth` makes a number of needed improvements when
+implementing the method in `R`, increasing the one’s capacity to
+inspect, visualize, and tune the synthetic control.
 
-The packages makes the following improvements:
+The package makes the following improvements:
 
-  - generates placebo synthetic controls on the fly allowing one to
-    generate inferential statistics and plots without needing to write
-    further code;
+  - generates placebo synthetic controls on the fly allowing for
+    inferential statistics;
   - offers plotting methods to easily explore the fit of the synthetic
     control and weights;
+  - increases transparency and usability through a pipe-able
+    implementation;
   - relies on a nested tidy data structure with `grab_` prefix functions
-    to easily extract different aspects of the pipeline used to generate
-    the synthetic control, increasing usability and data visibility.
+    to easily extract component elements from synthetic control
+    pipeline.
 
 ## Installation
 
 ``` r
-# Install the developer version from Github
 # install.packages("devtools")
-devtools::install_github("tidyverse/ggplot2")
+devtools::install_github("edunford/tidysynth")
 ```
 
 ## Usage
 
-The package uses pipeline of functions to generate the synthetic
+The package uses a pipeline of functions to generate the synthetic
 control.
 
-|        Function        | Description                                                                                                                                                     |
-| :--------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `synthetic_control()`  | Initialize a `synth_tbl`. The main initialization function of the `tidysynth` method.                                                                           |
+| Function               | Description                                                                                                                                                     |
+| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `synthetic_control()`  | Initialize a `synth_tbl` by specifying the panel series, outcome, and intervention period.                                                                      |
 | `generate_predictor()` | Create one or more scalar variables summarizing covariate data across a specified time window. These predictor variables are used to fit the synthetic control. |
-|  `generate_weigths()`  | fits the unit and predictor weights used to generate the synthetic control.                                                                                     |
-|  `generate_control()`  | generates the synthetic control using the optimized weights.                                                                                                    |
+| `generate_weigths()`   | Fit the unit and predictor weights used to generate the synthetic control.                                                                                      |
+| `generate_control()`   | Generate the synthetic control using the optimized weights.                                                                                                     |
 
-The following example comes from Abadie et. al 2010, which evaluates the
+The following example comes from Abadie et al. 2010, which evaluates the
 impact of Proposition 99 on cigarette consumption in California.
-Proposition 99 greatly increased funding to anti-smoking campaigns and
-imposed a 25 cent tax on cigarettes
 
 ``` r
 require(tidysynth)
@@ -63,9 +61,10 @@ smoking %>% dplyr::glimpse()
     ## $ retprice  <dbl> 39.3, 39.9, 30.6, 38.9, 34.3, 38.4, 31.4, 37.3, 36.7, 28.8,…
 
 The method aims to generate a synthetic California using information
-from a pool of control states where a law like Proposition 99 was not
-implemented. This “donor pool” holds the case comparisons from which we
-borrow information from to generate a synthetic version of California.
+from a subset of control states (the “donor pool”) where a similiar law
+was\_not\_ implemented. The donor pool is the subset of case comparisons
+from which information is borrowed to generate a synthetic version of
+the treated unit (“California”).
 
 ``` r
 smoking_out <-
@@ -73,25 +72,28 @@ smoking_out <-
   smoking %>%
   
   # initial the synthetic control object
-  synthetic_control(outcome = cigsale, # what variable are we generating the synthetic control for?
-                    unit = state, # Unit index in the panel data
-                    time = year, # Time index in the panel data
-                    i_unit = "California", # Name of the unit where the intervention occurred
+  synthetic_control(outcome = cigsale, # outcome
+                    unit = state, # unit index in the panel data
+                    time = year, # time index in the panel data
+                    i_unit = "California", # unit where the intervention occurred
                     i_time = 1988, # time period when the intervention occurred
-                    generate_placebos=T # generate placebo synthetic controls as well
+                    generate_placebos=T # generate placebo synthetic controls (for inference)
                     ) %>%
   
   # Generate the aggregate predictors used to fit the weights
+  
+  # average log income, retail price of cigarettes, and proportion of the
+  # population between 15 and 24 years of age from 1980 - 1988
   generate_predictor(time_window=1980:1988,
                      ln_income = mean(lnincome, na.rm = T),
                      ret_price = mean(retprice, na.rm = T),
                      youth = mean(age15to24, na.rm = T)) %>%
   
-  # What was the averate beer consumption in the donor pool from 1984 - 1988
+  # average beer consumption in the donor pool from 1984 - 1988
   generate_predictor(time_window=1984:1988,
                      beer_sales = mean(beer, na.rm = T)) %>%
   
-  # Lagged cigarette sales
+  # Lagged cigarette sales 
   generate_predictor(time_window=1975,
                      cigsale_1975 = cigsale) %>%
   generate_predictor(time_window=1980,
@@ -101,7 +103,7 @@ smoking_out <-
   
   
   # Generate the fitted weights for the synthetic control
-  generate_weights(optimization_window =1970:1988, # Can set the time window in the 
+  generate_weights(optimization_window =1970:1988, # time to use in the optimization task
                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
   
   # Generate the synthetic control
@@ -109,8 +111,10 @@ smoking_out <-
 ```
 
 Once the synthetic control is generated, one can easily assess the fit
-by looking at the trends of the synthetic and observed time
-series.
+by comparing the trends of the synthetic and observed time series. The
+idea is that the trends in the pre-intervention period should map
+closely onto one
+another.
 
 ``` r
 smoking_out %>% plot_trends()
@@ -118,9 +122,9 @@ smoking_out %>% plot_trends()
 
 <img src="README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
-To capture the causal effect (i.e. the difference between the observed
-and counterfactual), we can plot the
-differences.
+To capture the causal quantity (i.e. the difference between the observed
+and counterfactual), one can plot the differences using
+`plot_differences()`
 
 ``` r
 smoking_out %>% plot_differences()
@@ -131,7 +135,7 @@ smoking_out %>% plot_differences()
 In addition, one can easily examine the weighting of the units and
 variables in the fit. This allows one to see which cases were used, in
 part, to generate the synthetic
-control
+control.
 
 ``` r
 smoking_out %>% plot_weights()
@@ -140,7 +144,8 @@ smoking_out %>% plot_weights()
 <img src="README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 Another useful way of evaluating the synthetic control is to look at how
-comparable the control is to the covariates of the actual fit.
+comparable the synthetic control is to the observed covariates of the
+treated unit.
 
 ``` r
 smoking_out %>% grab_balance_table()
@@ -159,13 +164,15 @@ smoking_out %>% grab_balance_table()
 
 ### Inference
 
-The method relies on generating placebo synthetic controls for every
-donor in the donor pool exactly as was done for California. By setting
-`generate_placebos = TRUE` when initializing the `synth_tbl` with
-`synthetic_control()`, placebo cases are generated alongside the target
-unit, where the intervention actually took place. The aim is then to
-compare the behavior between the target difference and the placebo
-differences.
+For inference, the method relies on repeating the method
+(i.e. generating placebo synthetic controls) for every donor in the
+donor pool exactly as was done for the treated unit. By setting
+`generate_placebos = TRUE` when initializing the `synth_tbl` object with
+`synthetic_control()`, placebo cases are automatically generated when
+constructing the sythetic control of interest. This makes it easy to
+explore rarity of the causal quantity is for the treated unit when
+compared to the
+placebos.
 
 ``` r
 smoking_out %>% plot_placebos()
@@ -173,13 +180,15 @@ smoking_out %>% plot_placebos()
 
 <img src="README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
-Note that the `plot_placebos()` function automatically prunes placebo
-synthetic controls that poorly fit and throw off the scale when plotting
-the placebos. To prune, the function looks at the pre-intervention
-period mean squared prediction error (MSPE) (i.e. a metric that reflects
-how well the synthetic control maps to the observed outcome time
-series). If a placebo control has a MSPE that is two times beyond the
-target case, then it’s dropped. To turn off this behavior, set `prune =
+Note that the `plot_placebos()` function automatically prunes any
+placebos that poorly fit the data in the pre-intervention period. The
+reason is for this is purely visual: those units tend to throw off the
+scale when plotting the placebos. To prune, the function looks at the
+pre-intervention period mean squared prediction error (MSPE) (i.e. a
+metric that reflects how well the synthetic control maps to the observed
+outcome time series). If a placebo control has a MSPE that is two times
+beyond the target case (e.g. “California”), then it’s dropped. To turn
+off this behavior, set `prune =
 FALSE`.
 
 ``` r
@@ -189,21 +198,20 @@ smoking_out %>% plot_placebos(prune=F)
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 Finally, Adabie et al. 2010 outline a way of constructing Fisher’s Exact
-P-value but taking dividing the post-intervention period MSPE by the
-pre-intervention period MSPE and then ranking all the cases by this
-ratio. The p-value is the constructed by taking the rank/total.\[1\] The
-idea is that if the synthetic control fits the observed time series well
-(low MSPE in the pre-period) and diverges in the post-period (high MSPE
-in the post-period) then there is a meaningful effect due to the
+P-value by dividing the post-intervention MSPE by the pre-intervention
+MSPE and then ranking all the cases by this ratio in descending order. A
+p-value is then constructed by taking the rank/total.\[1\] The idea is
+that if the synthetic control fits the observed time series well (low
+MSPE in the pre-period) and diverges in the post-period (high MSPE in
+the post-period) then there is a meaningful effect due to the
 intervention. Put differently, a good fit in the pre-period means we’ve
-generate a descent mapping of the cases behavior. If the intervention
+generate a descent mapping of the case’s behavior. If the intervention
 had no effect, then the post-period and pre-period should continue to
-map onto one another fairly well.
+map onto one another fairly well (yielding a ratio close to 1).
 
-This ratio can be easily plotted, offering insight into the rarity of
-the case where the intervention actually occurred. Here one can see that
-California is a clear
-outlier.
+This ratio can be easily plotted using `plot_mspe_ratio()`, offering
+insight into the rarity of the case where the intervention actually
+occurred.
 
 ``` r
 smoking_out %>% plot_mspe_ratio()
@@ -211,7 +219,7 @@ smoking_out %>% plot_mspe_ratio()
 
 <img src="README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 
-For most specific information, there is a significance table that can be
+For more specific information, there is a significance table that can be
 extracted with one of the many `grab_` prefix functions.
 
 ``` r
@@ -235,14 +243,13 @@ smoking_out %>% grab_signficance()
 
 ### Accessing Data
 
-In addition, to the main data pipeline for generating the synthetic
+In addition to the main data pipeline for generating the synthetic
 control and the `plot_` prefix functions for visualizing the output,
-there are also a number of `grab_` prefix functions that allow one
-easily to grab the data contained within a `synth_tbl` object.
+there are a number of `grab_` prefix functions that offer easy access to
+the data contained within a `synth_tbl` object.
 
-Note that at its core, a `synth_tbl` is just a nested tibble data frame,
-where each component of the synthetic control pipeline is appended on as
-each function is run.
+At its core, a `synth_tbl` is simply a nested tibble data frame, where
+each component of the synthetic control pipeline is accessible.
 
 ``` r
 smoking_out
@@ -264,21 +271,20 @@ smoking_out
     ## # … with 68 more rows, and 4 more variables: .predictor_weights <list>,
     ## #   .original_data <list>, .meta <list>, .loss <list>
 
-To make it easier to access the relevant data fields (as writing out the
-relevant unnesting procedure can get involved), the `grab_` prefix
-functions come into
+To access the relevant data fields, the `grab_` prefix functions come
+into
 play.
 
-|          Function          | Description                                                                                                                                        |
-| :------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-|      `grab_outcome()`      | Extract the outcome variable generated by `synthetic_control()`.                                                                                   |
-|    `grab_predictors()`     | Extract the aggregate-level covariates generated by `generate_predictor()`.                                                                        |
-|   `grab_unit_weights()`    | Extract the unit weights generated by `generate_weights()`.                                                                                        |
+| Function                   | Description                                                                                                                                        |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `grab_outcome()`           | Extract the outcome variable generated by `synthetic_control()`.                                                                                   |
+| `grab_predictors()`        | Extract the aggregate-level covariates generated by `generate_predictor()`.                                                                        |
+| `grab_unit_weights()`      | Extract the unit weights generated by `generate_weights()`.                                                                                        |
 | `grab_predictor_weights()` | Extract the predictor variable weights generated by `generate_weights()`.                                                                          |
-|       `grab_loss()`        | Extract the RMSE loss of the optimized weights generated by `generate_weights()`.                                                                  |
+| `grab_loss()`              | Extract the RMSE loss of the optimized weights generated by `generate_weights()`.                                                                  |
 | `grab_synthetic_control()` | Extract the synthetic control generated using `generate_control()`.                                                                                |
-|    `grab_signficance()`    | Generate inferential statistics comparing the rarity of the unit that actually received the intervention to the placebo units in the donor pool.   |
-|   `grab_balance_table()`   | Compare the distributions of the aggregate-level predictors for the observed intervention unit, the synthetic control, and the donor pool average. |
+| `grab_signficance()`       | Generate inferential statistics comparing the rarity of the unit that actually received the intervention to the placebo units in the donor pool.   |
+| `grab_balance_table()`     | Compare the distributions of the aggregate-level predictors for the observed intervention unit, the synthetic control, and the donor pool average. |
 
 ``` r
 smoking_out %>% grab_synthetic_control()
