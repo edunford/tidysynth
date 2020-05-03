@@ -3,12 +3,12 @@
 
 ## Overview
 
-`tidysynth` offers a tidy implementation the synthetic control method in
-`R` (see Abadie et al. 2003, 2010, 2015). Building on the
+`tidysynth` is a tidy implementation the synthetic control method in `R`
+(see Abadie et al. 2003, 2010, 2015). Building on the
 [`Synth`](https://cran.r-project.org/web/packages/Synth/Synth.pdf)
 package, `tidysynth` makes a number of needed improvements when
-implementing the method in `R`, increasing the one’s capacity to
-inspect, visualize, and tune the synthetic control.
+implementing the method in `R`, which allow users to inspect, visualize,
+and tune the synthetic control more easily.
 
 The package makes the following improvements:
 
