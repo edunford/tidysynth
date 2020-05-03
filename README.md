@@ -38,7 +38,7 @@ control.
 | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `synthetic_control()`  | Initialize a `synth_tbl` by specifying the panel series, outcome, and intervention period.                                                                      |
 | `generate_predictor()` | Create one or more scalar variables summarizing covariate data across a specified time window. These predictor variables are used to fit the synthetic control. |
-| `generate_weigths()`   | Fit the unit and predictor weights used to generate the synthetic control.                                                                                      |
+| `generate_weights()`   | Fit the unit and predictor weights used to generate the synthetic control.                                                                                      |
 | `generate_control()`   | Generate the synthetic control using the optimized weights.                                                                                                     |
 
 The following example comes from Abadie et al. 2010, which evaluates the
