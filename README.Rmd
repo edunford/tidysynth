@@ -2,7 +2,8 @@
 output: github_document
 ---
 
-# tidysynth
+
+# tidysynth <img src="man/figures/logo.png" align="right" width="120" />
 
 ## Overview
 

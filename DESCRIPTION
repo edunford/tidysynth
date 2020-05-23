@@ -1,5 +1,5 @@
 Package: tidysynth
-Title: What the Package Does (One Line, Title Case)
+Title: A tidy implementation of the synthetic control method in R
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Eric",

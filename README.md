@@ -1,5 +1,5 @@
 
-# tidysynth
+# tidysynth <img src="man/figures/logo.png" align="right" width="120" />
 
 ## Overview
 
@@ -50,8 +50,8 @@ data("smoking")
 smoking %>% dplyr::glimpse()
 ```
 
-    ## Rows: 1,209
-    ## Columns: 7
+    ## Observations: 1,209
+    ## Variables: 7
     ## $ state     <chr> "Rhode Island", "Tennessee", "Indiana", "Nevada", "Louisian…
     ## $ year      <dbl> 1970, 1970, 1970, 1970, 1970, 1970, 1970, 1970, 1970, 1970,…
     ## $ cigsale   <dbl> 123.9, 99.8, 134.6, 189.5, 115.9, 108.4, 265.7, 93.8, 100.3…
