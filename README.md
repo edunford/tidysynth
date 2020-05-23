@@ -1,6 +1,8 @@
 
 # tidysynth <img src="man/figures/logo.png" align="right" width="120" />
 
+<br>
+
 ## Overview
 
 `tidysynth` is a tidy implementation the synthetic control method in `R`
