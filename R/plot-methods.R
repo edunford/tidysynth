@@ -312,7 +312,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
     dplyr::mutate(diff = real_y-synth_y) %>%
     dplyr::filter(time_unit %in% time_window) %>%
     dplyr::mutate(type_text = ifelse(.placebo==0,treatment_unit,"control units"),
-                  type_text = factor(type_text,level=c(treatment_unit,"control units")))
+                  type_text = factor(type_text,levels=c(treatment_unit,"control units")))
 
 
   # Pruning implementation-- if one of the donors falls outside two standard
@@ -422,17 +422,17 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
 #'
 #' }
 #'
-plot_weights <- function(.data){
+plot_weights <- function(data){
   UseMethod("plot_weights")
 }
 
 #' @export
-plot_weights <- function(.data){
+plot_weights <- function(data){
 
   # Combine the different type of weight outputs
   dplyr::bind_rows(
 
-    grab_unit_weights(.data,placebo = F) %>%
+    grab_unit_weights(data,placebo = F) %>%
       dplyr::mutate(type="Control Unit Weights (W)"),
 
     grab_predictor_weights(.data,placebo = F) %>%
@@ -551,10 +551,9 @@ plot_mspe_ratio <- function(data,time_window=NULL){
     dplyr::mutate(unit_name = forcats::fct_reorder(as.character(unit_name),mspe_ratio)) %>%
     ggplot2::ggplot(ggplot2::aes(unit_name,
                                  mspe_ratio,
-                                 fill=type,color=type)) +
+                                 fill=type)) +
     ggplot2::geom_col(alpha=.65) +
     ggplot2::coord_flip() +
-    ggplot2::geom_point() +
     ggplot2::labs(y = "Post-Period MSPE / Pre-Period MSPE",x="",fill="",color="",
                   title="Ratio of the pre and post intervention period mean squared predictive error") +
     ggplot2::scale_fill_manual(values=c("grey50","#b41e7c")) +

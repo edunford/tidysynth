@@ -1,6 +1,6 @@
 #' synth_method
 #'
-#' [AUX Function] Original synthetic control method proposed by (Abadie et al.
+#' AUX Function: Original synthetic control method proposed by (Abadie et al.
 #' 2003, 2010, 2015) and implemented in `synth` package. Method has been
 #' commendeered for internal use here.
 #'

@@ -83,7 +83,7 @@ specified; rgV.optim = Results from optimx() minimization. Could be used
 for diagnostics.
 }
 \description{
-\link{AUX Function} Original synthetic control method proposed by (Abadie et al.
+AUX Function: Original synthetic control method proposed by (Abadie et al.
 2003, 2010, 2015) and implemented in \code{synth} package. Method has been
 commendeered for internal use here.
 }

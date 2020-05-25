@@ -63,6 +63,8 @@ and \eqn{W}. Note also that \eqn{V} can be provided by the user. See
 }
 \examples{
 
+\dontrun{
+
 # Smoking example data
 data(smoking)
 
@@ -86,5 +88,7 @@ synthetic_control(outcome = cigsale,
 # Extract respective predictor matrices
 smoking_out \%>\% grab_predictors(type = "treated")
 smoking_out \%>\% grab_predictors(type = "controls")
+
+}
 
 }

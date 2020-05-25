@@ -20,6 +20,17 @@ synth_weights(
 )
 }
 \arguments{
+\item{data}{nested data of type \code{synth_tbl} generated from
+\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
+information on how a \code{sythn_tbl} object is organized. In addition, a matrix
+of predictors must be prespecified using the \code{generate_predictor()}
+function. See documentation for more information on how to generate a
+predictor function.}
+
+\item{time_window}{the temporal window of the pre-intervention outcome time
+series to be used in the optimization task. Default behavior uses the
+entire pre-intervention time period.}
+
 \item{custom_variable_weights}{a vector of provided weights that define a
 variable's importance in the optimization task. The weights are intended to
 reflect the users prior regarding the relative significance of each
@@ -68,10 +79,6 @@ the variables (see ipop for details)}
 
 \item{...}{Additional arguments to be passed to optimx and or genoud to
 adjust optimization.}
-
-\item{optimization_window}{the temporal window of the pre-intervention
-outcome time series to be used in the optimization task. Default behavior
-uses the entire pre-intervention time period.}
 }
 \value{
 tibble data frame with optimized weights attached.
@@ -81,12 +88,4 @@ Auxiliary Function for generating individual weights for each unit-specific
 data entry. The method allows of opimtizing weights for all placebo and
 treated data configurations (assuming there are placebo configurations to
 generate)
-}
-\details{
-#' @param data nested data of type \code{synth_tbl} generated from
-\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
-information on how a \code{sythn_tbl} object is organized. In addition, a matrix
-of predictors must be prespecified using the \code{generate_predictor()}
-function. See documentation for more information on how to generate a
-predictor function.
 }

@@ -1,13 +1,13 @@
 Package: tidysynth
 Title: A tidy implementation of the synthetic control method in R
-Version: 0.0.0.9000
+Version: 0.0.1.0000
 Authors@R: 
     person(given = "Eric",
            family = "Dunford",
            role = c("aut", "cre"),
            email = "ed769@georgetown.edu",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: `tidysynth` is a tidy implementation the synthetic control method in `R`. A synthetic control offers a way of evaluating the effect of an intervention in comparative case studies. `tidysynth` makes a number of improvements when implementing the method in `R`. These improvements allow users to inspect, visualize, and tune the synthetic control more easily. A key benefit of a tidy implementation is that the entire preparation process for building the synthetic control can be accomplished in a single pipe.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

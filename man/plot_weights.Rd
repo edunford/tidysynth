@@ -4,7 +4,7 @@
 \alias{plot_weights}
 \title{plot_weights}
 \usage{
-plot_weights(.data)
+plot_weights(data)
 }
 \arguments{
 \item{data}{nested data of type \code{synth_tbl}.}

@@ -61,6 +61,7 @@
 #' ###### Basic Example #######
 #' ############################
 #'
+#' \dontrun{
 #' # Smoking example data
 #' data(smoking)
 #'
@@ -86,7 +87,6 @@
 #' ####### Full implementation #######
 #' ###################################
 #'
-#' \dontrun{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -274,6 +274,7 @@ as_synth.data.frame = function(.data,...){
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Smoking example data
 #' data(smoking)
 #'
@@ -289,6 +290,7 @@ as_synth.data.frame = function(.data,...){
 #'
 #' # Check if is class synth_tbl
 #' is_synth(smoking_out)
+#' }
 #'
 is_synth <- function(x){
   ifelse("synth_tbl" %in% class(x),TRUE,FALSE)
@@ -357,6 +359,8 @@ is_synth <- function(x){
 #'
 #' @examples
 #'
+#' \dontrun{
+#'
 #' # Smoking example data
 #' data(smoking)
 #'
@@ -380,6 +384,8 @@ is_synth <- function(x){
 #' # Extract respective predictor matrices
 #' smoking_out %>% grab_predictors(type = "treated")
 #' smoking_out %>% grab_predictors(type = "controls")
+#'
+#' }
 #'
 generate_predictor <- function(data,time_window=NULL,...){
   UseMethod("generate_predictor")
@@ -583,11 +589,11 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 #' @param quadopt string vector that specifies the routine for quadratic
 #'   optimization over w weights. possible values are "ipop" and "LowRankQP"
 #'   (see ipop and LowRankQP for details). default is 'ipop'
-#' @param Margin.ipop setting for ipop optimization routine: how close we get to
+#' @param margin_ipop setting for ipop optimization routine: how close we get to
 #'   the constrains (see ipop for details)
-#' @param Sigf.ipop setting for ipop optimization routine: Precision (default: 7
+#' @param sigf_ipop setting for ipop optimization routine: Precision (default: 7
 #'   significant figures (see ipop for details)
-#' @param Bound.ipop setting for ipop optimization routine: Clipping bound for
+#' @param bound_ipop setting for ipop optimization routine: Clipping bound for
 #'   the variables (see ipop for details)
 #' @param verbose Logical flag. If TRUE then intermediate results will be shown.
 #' @param ... Additional arguments to be passed to optimx and or genoud to
@@ -691,13 +697,12 @@ generate_weights <-function(data,
                             optimization_window = NULL,
                             custom_variable_weights = NULL,
                             include_fit = FALSE,
-                            track_progress = FALSE,
                             optimization_method = c('Nelder-Mead','BFGS'),
                             genoud = FALSE,
                             quadopt = "ipop",
-                            Margin.ipop = 5e-04,
-                            Sigf.ipop = 5,
-                            Bound.ipop = 10,
+                            margin_ipop = 5e-04,
+                            sigf_ipop = 5,
+                            bound_ipop = 10,
                             verbose = FALSE,
                             ...){
   UseMethod("generate_weights")
@@ -711,9 +716,9 @@ generate_weights.synth_tbl <-function(data,
                                       optimization_method = c('Nelder-Mead','BFGS'),
                                       genoud = FALSE,
                                       quadopt = "ipop",
-                                      Margin.ipop = 5e-04,
-                                      Sigf.ipop = 5,
-                                      Bound.ipop = 10,
+                                      margin_ipop = 5e-04,
+                                      sigf_ipop = 5,
+                                      bound_ipop = 10,
                                       verbose = FALSE,
                                       ...){
 
@@ -751,9 +756,9 @@ generate_weights.synth_tbl <-function(data,
                     optimization_method = optimization_method,
                     genoud = genoud,
                     quadopt = quadopt,
-                    Margin.ipop = Margin.ipop,
-                    Sigf.ipop = Sigf.ipop,
-                    Bound.ipop = Bound.ipop,
+                    Margin.ipop = margin_ipop,
+                    Sigf.ipop = sigf_ipop,
+                    Bound.ipop = bound_ipop,
                     verbose = verbose) %>%
       dplyr::bind_rows(master_nest,.)
 
@@ -779,15 +784,15 @@ generate_weights.synth_tbl <-function(data,
 #' treated data configurations (assuming there are placebo configurations to
 #' generate)
 #'
-#' #' @param data nested data of type `synth_tbl` generated from
+#' @param data nested data of type `synth_tbl` generated from
 #'   `sythetic_control()`. See `synthetic_control()` documentation for more
 #'   information on how a `sythn_tbl` object is organized. In addition, a matrix
 #'   of predictors must be prespecified using the `generate_predictor()`
 #'   function. See documentation for more information on how to generate a
 #'   predictor function.
-#' @param optimization_window the temporal window of the pre-intervention
-#'   outcome time series to be used in the optimization task. Default behavior
-#'   uses the entire pre-intervention time period.
+#' @param time_window the temporal window of the pre-intervention outcome time
+#'   series to be used in the optimization task. Default behavior uses the
+#'   entire pre-intervention time period.
 #' @param custom_variable_weights a vector of provided weights that define a
 #'   variable's importance in the optimization task. The weights are intended to
 #'   reflect the users prior regarding the relative significance of each
@@ -852,11 +857,11 @@ synth_weights <- function(data,
 
   # If placebo out version of the grab_ function, clear unnecessary fields
   is_placebo = ifelse(any(data$.placebo == 1),T,F)
-  clear_placebo = function(.data){
-    if(".placebo" %in% colnames(.data)){
-      .data %>% dplyr::select(-.id,-.placebo)
+  clear_placebo = function(data){
+    if(".placebo" %in% colnames(data)){
+      data %>% dplyr::select(-.id,-.placebo)
     }else{
-      .data
+      data
     }
   }
 
@@ -1080,11 +1085,11 @@ generate_control.synth_tbl <- function(data){
 
     # If placebo out version of the grab_ function, clear unnecessary fields
     is_placebo = ifelse(any(data$.placebo == 1),T,F)
-    clear_placebo = function(.data){
-      if(".placebo" %in% colnames(.data)){
-        .data %>% dplyr::select(-.id,-.placebo)
+    clear_placebo = function(data){
+      if(".placebo" %in% colnames(data)){
+        data %>% dplyr::select(-.id,-.placebo)
       }else{
-        .data
+        data
       }
     }
 
@@ -1154,8 +1159,4 @@ generate_control.synth_tbl <- function(data){
 
   return(as_synth(master_nest))
 }
-
-
-
-
 

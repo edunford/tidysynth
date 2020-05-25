@@ -9,13 +9,12 @@ generate_weights(
   optimization_window = NULL,
   custom_variable_weights = NULL,
   include_fit = FALSE,
-  track_progress = FALSE,
   optimization_method = c("Nelder-Mead", "BFGS"),
   genoud = FALSE,
   quadopt = "ipop",
-  Margin.ipop = 5e-04,
-  Sigf.ipop = 5,
-  Bound.ipop = 10,
+  margin_ipop = 5e-04,
+  sigf_ipop = 5,
+  bound_ipop = 10,
   verbose = FALSE,
   ...
 )
@@ -67,13 +66,13 @@ irregular.}
 optimization over w weights. possible values are "ipop" and "LowRankQP"
 (see ipop and LowRankQP for details). default is 'ipop'}
 
-\item{Margin.ipop}{setting for ipop optimization routine: how close we get to
+\item{margin_ipop}{setting for ipop optimization routine: how close we get to
 the constrains (see ipop for details)}
 
-\item{Sigf.ipop}{setting for ipop optimization routine: Precision (default: 7
+\item{sigf_ipop}{setting for ipop optimization routine: Precision (default: 7
 significant figures (see ipop for details)}
 
-\item{Bound.ipop}{setting for ipop optimization routine: Clipping bound for
+\item{bound_ipop}{setting for ipop optimization routine: Clipping bound for
 the variables (see ipop for details)}
 
 \item{verbose}{Logical flag. If TRUE then intermediate results will be shown.}

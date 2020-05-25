@@ -17,6 +17,7 @@ test for objects of type "synth_tbl".
 }
 \examples{
 
+\dontrun{
 # Smoking example data
 data(smoking)
 
@@ -32,5 +33,6 @@ synthetic_control(outcome = cigsale,
 
 # Check if is class synth_tbl
 is_synth(smoking_out)
+}
 
 }

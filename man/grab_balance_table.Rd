@@ -9,9 +9,6 @@ grab_balance_table(data)
 \arguments{
 \item{data}{nested data of type \code{synth_tbl}}
 }
-\value{
-
-}
 \description{
 Compare the distributions of the aggregate-level predictors for the observed
 intervnetion unit, the synthetic control, and the donor pool average. Table
@@ -21,48 +18,31 @@ control.
 \examples{
 
 \dontrun{
-
-# Smoking example data
 data(smoking)
-
 smoking_out <-
 smoking \%>\%
-
-# initial the synthetic control object
 synthetic_control(outcome = cigsale,
                   unit = state,
                   time = year,
                   i_unit = "California",
                   i_time = 1988,
                   generate_placebos=F) \%>\%
-
-# Generate the aggregate predictors used to generate the weights
   generate_predictor(time_window=1980:1988,
                      lnincome = mean(lnincome, na.rm = T),
                      retprice = mean(retprice, na.rm = T),
                      age15to24 = mean(age15to24, na.rm = T)) \%>\%
-
   generate_predictor(time_window=1984:1988,
                      beer = mean(beer, na.rm = T)) \%>\%
-
   generate_predictor(time_window=1975,
                      cigsale_1975 = cigsale) \%>\%
-
   generate_predictor(time_window=1980,
                      cigsale_1980 = cigsale) \%>\%
-
   generate_predictor(time_window=1988,
                      cigsale_1988 = cigsale) \%>\%
-
-
-  # Generate the fitted weights for the synthetic control
   generate_weights(optimization_window =1970:1988,
                    Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) \%>\%
-
-  # Generate the synthetic control
   generate_control()
 
-# Compare the distributions between the observed data, the synthetic control, and the donor pool average
 smoking_out \%>\% grab_balance_table()
 
 }

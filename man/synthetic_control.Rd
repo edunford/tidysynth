@@ -79,6 +79,7 @@ inference as outlined in Abadie et al. 2010.
 ###### Basic Example #######
 ############################
 
+\dontrun{
 # Smoking example data
 data(smoking)
 
@@ -104,7 +105,6 @@ smoking_out \%>\% grab_outcome(type = "controls")
 ####### Full implementation #######
 ###################################
 
-\dontrun{
 
 # Smoking example data
 data(smoking)

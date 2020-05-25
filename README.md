@@ -5,14 +5,28 @@
 
 ## Overview
 
-`tidysynth` is a tidy implementation the synthetic control method in `R`
-(see Abadie et al. 2003, 2010, 2015). Building on the
-[`Synth`](https://cran.r-project.org/web/packages/Synth/Synth.pdf)
-package, `tidysynth` makes a number of needed improvements when
-implementing the method in `R`, which allow users to inspect, visualize,
-and tune the synthetic control more easily.
+`tidysynth` is a tidy implementation the [synthetic control
+method](https://en.wikipedia.org/wiki/Synthetic_control_method) in `R`.
+A synthetic control offers a way of evaluating the effect of an
+intervention in comparative case studies. The method aims to model a
+counterfactual unit using a weighted average of units that did not
+receive the intervention. The effect of the intervention can be
+estimated by comparing differences in the observed and synthetic time
+series. See Abadie et al.
+[2003](https://www.aeaweb.org/articles?id=10.1257/000282803321455188),
+[2010](https://economics.mit.edu/files/11859),
+[2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12116) for
+more on the method and use cases.
 
-The package makes the following improvements:
+Building on the
+[`Synth`](https://cran.r-project.org/web/packages/Synth/Synth.pdf)
+package, `tidysynth` makes a number of improvements when implementing
+the method in `R`. These improvements allow users to inspect, visualize,
+and tune the synthetic control more easily. A key benefit of a tidy
+implementation is that the entire preparation process for building the
+synthetic control can be accomplished in a single pipe.
+
+Specifically, the package:
 
   - generates placebo synthetic controls on the fly allowing for
     inferential statistics;
@@ -43,7 +57,8 @@ control.
 | `generate_weights()`   | Fit the unit and predictor weights used to generate the synthetic control.                                                                                      |
 | `generate_control()`   | Generate the synthetic control using the optimized weights.                                                                                                     |
 
-The following example comes from Abadie et al. 2010, which evaluates the
+The following example comes from [Abadie et
+al. 2010](https://economics.mit.edu/files/11859), which evaluates the
 impact of Proposition 99 on cigarette consumption in California.
 
 ``` r
@@ -63,8 +78,8 @@ smoking %>% dplyr::glimpse()
     ## $ retprice  <dbl> 39.3, 39.9, 30.6, 38.9, 34.3, 38.4, 31.4, 37.3, 36.7, 28.8,…
 
 The method aims to generate a synthetic California using information
-from a subset of control states (the “donor pool”) where a similiar law
-was\_not\_ implemented. The donor pool is the subset of case comparisons
+from a subset of control states (the “donor pool”) where a similar law
+was *not* implemented. The donor pool is the subset of case comparisons
 from which information is borrowed to generate a synthetic version of
 the treated unit (“California”).
 
@@ -86,27 +101,28 @@ smoking_out <-
   
   # average log income, retail price of cigarettes, and proportion of the
   # population between 15 and 24 years of age from 1980 - 1988
-  generate_predictor(time_window=1980:1988,
+  generate_predictor(time_window = 1980:1988,
                      ln_income = mean(lnincome, na.rm = T),
                      ret_price = mean(retprice, na.rm = T),
                      youth = mean(age15to24, na.rm = T)) %>%
   
   # average beer consumption in the donor pool from 1984 - 1988
-  generate_predictor(time_window=1984:1988,
+  generate_predictor(time_window = 1984:1988,
                      beer_sales = mean(beer, na.rm = T)) %>%
   
   # Lagged cigarette sales 
-  generate_predictor(time_window=1975,
+  generate_predictor(time_window = 1975,
                      cigsale_1975 = cigsale) %>%
-  generate_predictor(time_window=1980,
+  generate_predictor(time_window = 1980,
                      cigsale_1980 = cigsale) %>%
-  generate_predictor(time_window=1988,
+  generate_predictor(time_window = 1988,
                      cigsale_1988 = cigsale) %>%
   
   
   # Generate the fitted weights for the synthetic control
-  generate_weights(optimization_window =1970:1988, # time to use in the optimization task
-                   Margin.ipop=.02,Sigf.ipop=7,Bound.ipop=6) %>%
+  generate_weights(optimization_window = 1970:1988, # time to use in the optimization task
+                   margin_ipop = .02,sigf_ipop = 7,bound_ipop = 6 # optimizer options
+  ) %>%
   
   # Generate the synthetic control
   generate_control()
@@ -166,14 +182,14 @@ smoking_out %>% grab_balance_table()
 
 ### Inference
 
-For inference, the method relies on repeating the method
-(i.e. generating placebo synthetic controls) for every donor in the
-donor pool exactly as was done for the treated unit. By setting
+For inference, the method relies on repeating the method for every donor
+in the donor pool exactly as was done for the treated unit —
+i.e. generating *placebo* synthetic controls). By setting
 `generate_placebos = TRUE` when initializing the `synth_tbl` object with
 `synthetic_control()`, placebo cases are automatically generated when
-constructing the sythetic control of interest. This makes it easy to
-explore rarity of the causal quantity is for the treated unit when
-compared to the
+constructing the synthetic control of interest. This makes it easy to
+explore how unique difference between the observed and synthetic unit is
+when compared to the
 placebos.
 
 ``` r
@@ -184,32 +200,33 @@ smoking_out %>% plot_placebos()
 
 Note that the `plot_placebos()` function automatically prunes any
 placebos that poorly fit the data in the pre-intervention period. The
-reason is for this is purely visual: those units tend to throw off the
+reason for doing so is purely visual: those units tend to throw off the
 scale when plotting the placebos. To prune, the function looks at the
 pre-intervention period mean squared prediction error (MSPE) (i.e. a
 metric that reflects how well the synthetic control maps to the observed
-outcome time series). If a placebo control has a MSPE that is two times
-beyond the target case (e.g. “California”), then it’s dropped. To turn
-off this behavior, set `prune =
+outcome time series in pre-intervention period). If a placebo control
+has a MSPE that is two times beyond the target case (e.g. “California”),
+then it’s dropped. To turn off this behavior, set `prune =
 FALSE`.
 
 ``` r
-smoking_out %>% plot_placebos(prune=F)
+smoking_out %>% plot_placebos(prune = FALSE)
 ```
 
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 Finally, Adabie et al. 2010 outline a way of constructing Fisher’s Exact
-P-value by dividing the post-intervention MSPE by the pre-intervention
+P-values by dividing the post-intervention MSPE by the pre-intervention
 MSPE and then ranking all the cases by this ratio in descending order. A
 p-value is then constructed by taking the rank/total.\[1\] The idea is
 that if the synthetic control fits the observed time series well (low
 MSPE in the pre-period) and diverges in the post-period (high MSPE in
 the post-period) then there is a meaningful effect due to the
-intervention. Put differently, a good fit in the pre-period means we’ve
-generate a descent mapping of the case’s behavior. If the intervention
-had no effect, then the post-period and pre-period should continue to
-map onto one another fairly well (yielding a ratio close to 1).
+intervention. If the intervention had no effect, then the post-period
+and pre-period should continue to map onto one another fairly well,
+yielding a ratio close to 1. If the placebo units fit the data
+similarly, then we can’t reject the hull hypothesis that there is no
+effect brought about by the intervention.
 
 This ratio can be easily plotted using `plot_mspe_ratio()`, offering
 insight into the rarity of the case where the intervention actually
@@ -311,7 +328,7 @@ Note that most all the `grab_` functions allow for extraction of the
 placebo units as well.
 
 ``` r
-smoking_out %>% grab_synthetic_control(placebo=T)
+smoking_out %>% grab_synthetic_control(placebo = T)
 ```
 
     ## # A tibble: 1,209 x 5
@@ -328,6 +345,47 @@ smoking_out %>% grab_synthetic_control(placebo=T)
     ##  9 California        0      1978   126.    125.
     ## 10 California        0      1979   122.    122.
     ## # … with 1,199 more rows
+
+#### But say I really want to `unnest()`…
+
+In the current implementation, you cannot unpack an entire `synth_tbl`
+using `unnest()`. This is due to disparities in the dimensions between
+the donor and treated units. The `grab_` function is meant to streamline
+any specific extraction needs. Alternatively, once can unnest individual
+columns as per usual, but must first convert the `synth_tbl` to a
+`tibble` data type.
+
+``` r
+smoking_out %>% 
+  tibble::as_tibble() %>% 
+  tidyr::unnest(cols = c(.outcome)) 
+```
+
+    ## # A tibble: 1,482 x 50
+    ##    .id   .placebo .type time_unit California `Rhode Island` Tennessee Indiana
+    ##    <chr>    <dbl> <chr>     <dbl>      <dbl>          <dbl>     <dbl>   <dbl>
+    ##  1 Cali…        0 trea…      1970       123              NA        NA      NA
+    ##  2 Cali…        0 trea…      1971       121              NA        NA      NA
+    ##  3 Cali…        0 trea…      1972       124.             NA        NA      NA
+    ##  4 Cali…        0 trea…      1973       124.             NA        NA      NA
+    ##  5 Cali…        0 trea…      1974       127.             NA        NA      NA
+    ##  6 Cali…        0 trea…      1975       127.             NA        NA      NA
+    ##  7 Cali…        0 trea…      1976       128              NA        NA      NA
+    ##  8 Cali…        0 trea…      1977       126.             NA        NA      NA
+    ##  9 Cali…        0 trea…      1978       126.             NA        NA      NA
+    ## 10 Cali…        0 trea…      1979       122.             NA        NA      NA
+    ## # … with 1,472 more rows, and 42 more variables: Nevada <dbl>, Louisiana <dbl>,
+    ## #   Oklahoma <dbl>, `New Hampshire` <dbl>, `North Dakota` <dbl>,
+    ## #   Arkansas <dbl>, Virginia <dbl>, Illinois <dbl>, `South Dakota` <dbl>,
+    ## #   Utah <dbl>, Georgia <dbl>, Mississippi <dbl>, Colorado <dbl>,
+    ## #   Minnesota <dbl>, Texas <dbl>, Kentucky <dbl>, Maine <dbl>, `North
+    ## #   Carolina` <dbl>, Montana <dbl>, Vermont <dbl>, Iowa <dbl>,
+    ## #   Connecticut <dbl>, Kansas <dbl>, Delaware <dbl>, Wisconsin <dbl>,
+    ## #   Idaho <dbl>, `New Mexico` <dbl>, `West Virginia` <dbl>, Pennsylvania <dbl>,
+    ## #   `South Carolina` <dbl>, Ohio <dbl>, Nebraska <dbl>, Missouri <dbl>,
+    ## #   Alabama <dbl>, Wyoming <dbl>, .predictors <list>,
+    ## #   .synthetic_control <list>, .unit_weights <list>, .predictor_weights <list>,
+    ## #   .original_data <list>, .meta <list>, .loss <list>
 
 ## Debugging
 
