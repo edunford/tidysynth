@@ -1,4 +1,4 @@
-context("Test synthetic_control() initialization of the synth_tbl object")
+context("Test synthetic_control() initialization of the synth pipeline")
 
 #'
 #' NOTE: if all the grab_ functions are operating correctly, than all the plot
@@ -35,14 +35,14 @@ dat <- dplyr::bind_rows(treated,controls) %>% tidyr::replace_na(list(treatment_v
 
 # Tests -------------------------------------------------------------------
 
-test_that("Test initialization of a synth_tbl using sythetic_control() works as expected with placebos",{
+test_that("Test initialization of a synth pipeline using sythetic_control() works as expected with placebos",{
 
   synth_out <- synthetic_control(data=dat,outcome = outcome,time = time,
                                  unit = unit,i_unit = "a",i_time=1995,
                                  generate_placebos = T)
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
 
   # Correct columns
   expect_equal(colnames(synth_out),expected = c(".id",".placebo",".type", ".outcome", ".original_data", ".meta"))
@@ -129,14 +129,14 @@ test_that("Test grab_outcomes works",{
 })
 
 
-test_that("Test initialization of a synth_tbl using sythetic_control() works as expected without placebos",{
+test_that("Test initialization of a synth pipeline using sythetic_control() works as expected without placebos",{
 
   synth_out <- synthetic_control(data=dat,outcome = outcome,time = time,
                                  unit = unit,i_unit = "a",i_time=1995,
                                  generate_placebos = F)
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
 
   # Correct columns
   expect_equal(colnames(synth_out),expected = c(".id",".placebo",".type", ".outcome", ".original_data", ".meta"))

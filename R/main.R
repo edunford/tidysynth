@@ -1,13 +1,12 @@
 #' synthetic_control
 #'
-#' `synthetic_control()` initializes a `synth_tbl` object. It can be used to
-#' declare the input data frame for use in the syntehtic control method. Allows
-#' for the specification of the panel units along with the intervention unit and
-#' time (`treated`). All units that are not the designated treated units are
-#' entered into the donor pool from which the synthetic control is generated.
-#' All time points prior and equal to the intervention time are designated as
-#' the pre-intervention period; and all time periods after are the
-#' post-intervention period.
+#' `synthetic_control()` declares the input data frame for use in the synthetic
+#' control method. Allows for the specification of the panel units along with
+#' the intervention unit and time (`treated`). All units that are not the
+#' designated treated units are entered into the donor pool from which the
+#' synthetic control is generated. All time points prior and equal to the
+#' intervention time are designated as the pre-intervention period; and all time
+#' periods after are the post-intervention period.
 #'
 #' Note that `synthetic_control()` also allows for the simultaneous generation
 #' of placebo units (i.e. units where the treated unit is one of the controls).
@@ -30,7 +29,7 @@
 #'   of the nested data where each control unit is the intervention unit.
 #'   Default is TRUE.
 #'
-#' @return `synth_tbl` with nested fields containing the following:
+#' @return `tbl_df` with nested fields containing the following:
 #'
 #'   - `.id`: unit id for the intervention case (this will differ when a placebo
 #'   unit).
@@ -236,64 +235,7 @@ synthetic_control.data.frame <- function(data = NULL,
   }
 
   # return the entire nested object.
-  return(as_synth(master_nest))
-}
-
-
-
-#' as_synth
-#'
-#' Coerce tibble data frame object to class `synth_tbl``
-#'
-#' @param .data tibble data frame.
-#' @param ...   catch for additional arguments
-#'
-#' @return An object of class `synth_tbl`
-#' @export
-as_synth <- function(.data, ...){
-  UseMethod("as_synth")
-}
-
-#' @export
-as_synth.data.frame = function(.data,...){
-  if(!"synth_tbl" %in% class(.data)){
-    class(.data) <- c(class(.data),"synth_tbl")
-  }
-  return(.data)
-}
-
-
-#' is_synth
-#'
-#' test for objects of type "synth_tbl".
-#'
-#' @param x object to be coerced or tested.
-#'
-#' @return boolean flag; TRUE if object is of class synth_tbl
-#' @export
-#'
-#' @examples
-#'
-#' \dontrun{
-#' # Smoking example data
-#' data(smoking)
-#'
-#' # initial the synthetic control object
-#' smoking_out <-
-#' smoking %>%
-#' synthetic_control(outcome = cigsale,
-#'                   unit = state,
-#'                   time = year,
-#'                   i_unit = "California",
-#'                   i_time = 1988,
-#'                   generate_placebos=F)
-#'
-#' # Check if is class synth_tbl
-#' is_synth(smoking_out)
-#' }
-#'
-is_synth <- function(x){
-  ifelse("synth_tbl" %in% class(x),TRUE,FALSE)
+  return(master_nest)
 }
 
 
@@ -316,9 +258,9 @@ is_synth <- function(x){
 #' `?generate_weights()`.
 #'
 #'
-#' @param data nested data of type `synth_tbl` generated from
+#' @param data nested data of type `tbl_df` generated from
 #'   `sythetic_control()`. See `synthetic_control()` documentation for more
-#'   information on how a `sythn_tbl` object is organized.
+#'   information.
 #' @param time_window set time window from the pre-intervention period that the
 #'   data should be aggregated across to generate the specific predictor.
 #'   Default is to use the entire pre-intervention period.
@@ -328,7 +270,7 @@ is_synth <- function(x){
 #'   all summary functions `na.rm = TRUE` argument should be specified as
 #'   aggregating across units with missing values is a common occurrence.
 #'
-#' @return `synth_tbl` with nested fields containing the following:
+#' @return `tbl_df` with nested fields containing the following:
 #'
 #'   - `.id`: unit id for the intervention case (this will differ when a placebo
 #'   unit).
@@ -392,7 +334,7 @@ generate_predictor <- function(data,time_window=NULL,...){
 }
 
 #' @export
-generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
+generate_predictor <- function(data,time_window=NULL,...){
 
 
   # Auxiliary function for generating a predictor for a single configuration of
@@ -420,7 +362,7 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 
         # Group by the unit axis
         dplyr::group_by(.data[[unit_index]]) %>%
-        dplyr::summarize(...) %>%
+        dplyr::summarize(...,.groups='drop') %>%
 
         # Convert to the relevant format
         tidyr::gather(variable,value,-.data[[unit_index]]) %>%
@@ -497,7 +439,7 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
   }
 
 
-  return(as_synth(master_nest))
+  return(master_nest)
 }
 
 
@@ -550,12 +492,11 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 #' time as the variable weights do not be learned for every placebo entry.
 #'
 #'
-#' @param data nested data of type `synth_tbl` generated from
-#'   `sythetic_control()`. See `synthetic_control()` documentation for more
-#'   information on how a `sythn_tbl` object is organized. In addition, a matrix
-#'   of predictors must be prespecified using the `generate_predictor()`
-#'   function. See documentation for more information on how to generate a
-#'   predictor function.
+#' @param data nested data of type `tbl_df` generated from `sythetic_control()`.
+#'   See `synthetic_control()` documentation for more information. In addition,
+#'   a matrix of predictors must be prespecified using the
+#'   `generate_predictor()` function. See documentation for more information on
+#'   how to generate a predictor function.
 #' @param optimization_window the temporal window of the pre-intervention
 #'   outcome time series to be used in the optimization task. Default behavior
 #'   uses the entire pre-intervention time period.
@@ -566,7 +507,7 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 #'   faster when a custom variable weights are provided. Default behavior
 #'   assumes no wieghts are provided and thus must be learned from the data.
 #' @param include_fit Boolean flag, if TRUE, then the optimization output is
-#'   included in the outputted `synth_tbl`.
+#'   included in the outputted `tbl_df`.
 #' @param optimization_method string vector that specifies the optimization
 #'   algorithms to be used. Permissable values are all optimization algorithms
 #'   that are currently implemented in the optimx function (see this function
@@ -574,8 +515,9 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 #'   'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
 #'   are specified, synth will run the optimization with all chosen algorithms
 #'   and then return the result for the best performing method. Default is
-#'   c('Nelder-Mead','BFGS'). As an additional possibility, the user can also specify 'All' which
-#'   means that synth will run the results over all algorithms in optimx.
+#'   c('Nelder-Mead','BFGS'). As an additional possibility, the user can also
+#'   specify 'All' which means that synth will run the results over all
+#'   algorithms in optimx.
 #' @param genoud Logical flag. If true, synth embarks on a two step
 #'   optimization. In the first step, genoud, an optimization function that
 #'   combines evolutionary algorithm methods with a derivative-based
@@ -599,7 +541,7 @@ generate_predictor.synth_tbl <- function(data,time_window=NULL,...){
 #' @param ... Additional arguments to be passed to optimx and or genoud to
 #'   adjust optimization.
 #'
-#' @return `synth_tbl` with nested fields containing the following:
+#' @return `tbl_df` with nested fields containing the following:
 #'
 #'   - `.id`: unit id for the intervention case (this will differ when a placebo
 #'   unit).
@@ -709,7 +651,7 @@ generate_weights <-function(data,
 }
 
 #' @export
-generate_weights.synth_tbl <-function(data,
+generate_weights <-function(data,
                                       optimization_window = NULL,
                                       custom_variable_weights = NULL,
                                       include_fit = FALSE,
@@ -731,9 +673,6 @@ generate_weights.synth_tbl <-function(data,
   # Grab data versions
   data_versions <- unique(data$.id)
 
-  # Track progress
-  pb <- dplyr::progress_estimated(length(data_versions),min_time = 30)
-
   # Iterate through the data versions
   master_nest <- NULL; first_pass <- TRUE; second_pass <- F
   for (v in data_versions){
@@ -742,7 +681,6 @@ generate_weights.synth_tbl <-function(data,
     if(verbose){
       if(second_pass){cat("Generating weights for the placebo units.\n");second_pass <- F}
       if(first_pass){cat("Generating weights for the intervention unit.\n");second_pass <- T}
-      pb$tick()$print()
     }
 
     # Generate weight for the data version
@@ -773,7 +711,7 @@ generate_weights.synth_tbl <-function(data,
 
   }
 
-  return(as_synth(master_nest))
+  return(master_nest)
 }
 
 
@@ -786,10 +724,9 @@ generate_weights.synth_tbl <-function(data,
 #'
 #' @param data nested data of type `synth_tbl` generated from
 #'   `sythetic_control()`. See `synthetic_control()` documentation for more
-#'   information on how a `sythn_tbl` object is organized. In addition, a matrix
-#'   of predictors must be prespecified using the `generate_predictor()`
-#'   function. See documentation for more information on how to generate a
-#'   predictor function.
+#'   information. In addition, a matrix of predictors must be pre-specified
+#'   using the `generate_predictor()` function. See documentation for more
+#'   information on how to generate a predictor function.
 #' @param time_window the temporal window of the pre-intervention outcome time
 #'   series to be used in the optimization task. Default behavior uses the
 #'   entire pre-intervention time period.
@@ -800,7 +737,7 @@ generate_weights.synth_tbl <-function(data,
 #'   faster when a custom variable weights are provided. Default behavior
 #'   assumes no wieghts are provided and thus must be learned from the data.
 #' @param include_fit Boolean flag, if TRUE, then the optimization output is
-#'   included in the outputted `synth_tbl`.
+#'   included in the outputted `tbl_df`.
 #' @param optimization_method string vector that specifies the optimization
 #'   algorithms to be used. Permissable values are all optimization algorithms
 #'   that are currently implemented in the optimx function (see this function
@@ -962,13 +899,12 @@ synth_weights <- function(data,
 #' from the donor pool to denerate a synthetic version of the treated unit time
 #' series.
 #'
-#' @param data nested data of type `synth_tbl` generated from
-#' `sythetic_control()`. See `synthetic_control()` documentation for more
-#' information on how a `sythn_tbl` object is organized. In addition,
-#' `.unit_weights` must be generate using `generate_weights()`. See
-#' documentation for more information on how to generate weights.
+#' @param data nested data of type `tbl_df` generated from `sythetic_control()`.
+#'   See `synthetic_control()` documentation for more information. In addition,
+#'   `.unit_weights` must be generate using `generate_weights()`. See
+#'   documentation for more information on how to generate weights.
 #'
-#' @return `synth_tbl` with nested fields containing the following:
+#' @return `tbl_df` with nested fields containing the following:
 #'
 #'   - `.id`: unit id for the intervention case (this will differ when a placebo
 #'   unit).
@@ -1065,7 +1001,7 @@ generate_control <- function(data){
 }
 
 #' @export
-generate_control.synth_tbl <- function(data){
+generate_control <- function(data){
 
   # Auxiliary function to generate the synthetic control for a single version of
   # the data.
@@ -1157,6 +1093,6 @@ generate_control.synth_tbl <- function(data){
       dplyr::bind_rows(master_nest,.)
   }
 
-  return(as_synth(master_nest))
+  return(master_nest)
 }
 

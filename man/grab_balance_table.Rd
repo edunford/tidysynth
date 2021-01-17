@@ -7,11 +7,11 @@
 grab_balance_table(data)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}}
+\item{data}{nested data of type \code{tbl_df}}
 }
 \description{
 Compare the distributions of the aggregate-level predictors for the observed
-intervnetion unit, the synthetic control, and the donor pool average. Table
+intervention unit, the synthetic control, and the donor pool average. Table
 helps user compare the the level of balance produced by the synthetic
 control.
 }

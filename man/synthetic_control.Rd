@@ -37,7 +37,7 @@ of the nested data where each control unit is the intervention unit.
 Default is TRUE.}
 }
 \value{
-\code{synth_tbl} with nested fields containing the following:
+\code{tbl_df} with nested fields containing the following:
 \itemize{
 \item \code{.id}: unit id for the intervention case (this will differ when a placebo
 unit).
@@ -57,14 +57,13 @@ in subsequent functions.
 }
 }
 \description{
-\code{synthetic_control()} initializes a \code{synth_tbl} object. It can be used to
-declare the input data frame for use in the syntehtic control method. Allows
-for the specification of the panel units along with the intervention unit and
-time (\code{treated}). All units that are not the designated treated units are
-entered into the donor pool from which the synthetic control is generated.
-All time points prior and equal to the intervention time are designated as
-the pre-intervention period; and all time periods after are the
-post-intervention period.
+\code{synthetic_control()} declares the input data frame for use in the synthetic
+control method. Allows for the specification of the panel units along with
+the intervention unit and time (\code{treated}). All units that are not the
+designated treated units are entered into the donor pool from which the
+synthetic control is generated. All time points prior and equal to the
+intervention time are designated as the pre-intervention period; and all time
+periods after are the post-intervention period.
 }
 \details{
 Note that \code{synthetic_control()} also allows for the simultaneous generation

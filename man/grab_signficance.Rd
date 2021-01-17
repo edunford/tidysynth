@@ -7,7 +7,7 @@
 grab_signficance(data, time_window = NULL)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}}
+\item{data}{nested data of type \code{tbl_df}}
 
 \item{time_window}{time window that the significance values should be
 computed.}
@@ -67,8 +67,8 @@ found in Adabie et al. 2010.
 Note that conventional significance levels are not achievable if there is an
 insufficient number of control cases. One needs at least 20 control case to
 use the conventional .05 level. With fewer cases, significance levels need to
-be adjusted to accomodate the low total rank. This is a bug of rank based
-siginificance metrics.
+be adjusted to accommodate the low total rank. This is a bug of rank based
+significance metrics.
 
 In addition to the Fisher's Precise P-Value, a Z-score is also included,
 which is just the standardized RMSE ratios for all the cases. The Z-Score

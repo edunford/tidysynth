@@ -22,10 +22,9 @@ synth_weights(
 \arguments{
 \item{data}{nested data of type \code{synth_tbl} generated from
 \code{sythetic_control()}. See \code{synthetic_control()} documentation for more
-information on how a \code{sythn_tbl} object is organized. In addition, a matrix
-of predictors must be prespecified using the \code{generate_predictor()}
-function. See documentation for more information on how to generate a
-predictor function.}
+information. In addition, a matrix of predictors must be pre-specified
+using the \code{generate_predictor()} function. See documentation for more
+information on how to generate a predictor function.}
 
 \item{time_window}{the temporal window of the pre-intervention outcome time
 series to be used in the optimization task. Default behavior uses the
@@ -39,7 +38,7 @@ faster when a custom variable weights are provided. Default behavior
 assumes no wieghts are provided and thus must be learned from the data.}
 
 \item{include_fit}{Boolean flag, if TRUE, then the optimization output is
-included in the outputted \code{synth_tbl}.}
+included in the outputted \code{tbl_df}.}
 
 \item{optimization_method}{string vector that specifies the optimization
 algorithms to be used. Permissable values are all optimization algorithms

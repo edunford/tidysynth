@@ -33,7 +33,7 @@ The package uses a pipeline of functions to generate the synthetic control.
 
 | Function  | Description
 |:---------|:----------|
-| `synthetic_control()` | Initialize a `synth_tbl` by specifying the panel series, outcome, and intervention period. |
+| `synthetic_control()` | Initialize a synth pipeline by specifying the panel series, outcome, and intervention period. This pipeline operates as a nested `tbl_df` |
 | `generate_predictor()` | Create one or more scalar variables summarizing covariate data across a specified time window. These predictor variables are used to fit the synthetic control. |
 | `generate_weights()` | Fit the unit and predictor weights used to generate the synthetic control. |
 | `generate_control()` | Generate the synthetic control using the optimized weights. |
@@ -120,7 +120,7 @@ smoking_out %>% grab_balance_table()
 
 ### Inference 
 
-For inference, the method relies on repeating the method for every donor in the donor pool exactly as was done for the treated unit &mdash; i.e. generating _placebo_ synthetic controls). By setting `generate_placebos = TRUE` when initializing the `synth_tbl` object with `synthetic_control()`, placebo cases are automatically generated when constructing the synthetic control of interest. This makes it easy to explore how unique difference between the observed and synthetic unit is when compared to the placebos. 
+For inference, the method relies on repeating the method for every donor in the donor pool exactly as was done for the treated unit &mdash; i.e. generating _placebo_ synthetic controls). By setting `generate_placebos = TRUE` when initializing the synth pipeline with `synthetic_control()`, placebo cases are automatically generated when constructing the synthetic control of interest. This makes it easy to explore how unique difference between the observed and synthetic unit is when compared to the placebos. 
 
 ```{r,fig.align="center",fig.width=10,fig.height=5,dpi=300}
 smoking_out %>% plot_placebos()
@@ -148,9 +148,9 @@ smoking_out %>% grab_signficance()
 
 ### Accessing Data 
 
-In addition to the main data pipeline for generating the synthetic control and the `plot_` prefix functions for visualizing the output, there are a number of `grab_` prefix functions that offer easy access to the data contained within a `synth_tbl` object.
+In addition to the main data pipeline for generating the synthetic control and the `plot_` prefix functions for visualizing the output, there are a number of `grab_` prefix functions that offer easy access to the data contained within a synth pipeline object.
 
-At its core, a `synth_tbl` is simply a nested tibble data frame, where each component of the synthetic control pipeline is accessible. 
+At its core, a synth pipeline is simply a nested tibble data frame, where each component of the synthetic control pipeline is accessible. 
 
 ```{r}
 smoking_out
@@ -181,11 +181,10 @@ smoking_out %>% grab_synthetic_control(placebo = T)
 
 #### But say I really want to `unnest()`...
 
-In the current implementation, you cannot unpack an entire `synth_tbl` using `unnest()`. This is due to disparities in the dimensions between the donor and treated units. The `grab_` function is meant to streamline any specific extraction needs. Alternatively, once can unnest individual columns as per usual, but must first convert the `synth_tbl` to a `tibble` data type.
+In the current implementation, you can unpack an entire synth pipeline using `unnest()`. The `grab_` function is meant to streamline any specific extraction needs. The entire method is built on top of a tidyverse infrastructure, so one can side-step most of the package's functionality and interact with the synth pipeline output as one would any nested `tbl_df` object. 
 
 ```{r}
 smoking_out %>% 
-  tibble::as_tibble() %>% 
   tidyr::unnest(cols = c(.outcome)) 
 ```
 

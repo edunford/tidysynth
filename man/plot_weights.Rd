@@ -7,7 +7,7 @@
 plot_weights(data)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}.}
+\item{data}{nested data of type \code{tbl_df}.}
 }
 \value{
 a \code{ggplot} object that plots the unit and variable weights.

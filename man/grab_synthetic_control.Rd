@@ -7,7 +7,7 @@
 grab_synthetic_control(data, placebo = F)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}}
+\item{data}{nested data of type \code{tbl_df}}
 
 \item{placebo}{boolean flag; if TRUE placebo values are returned as well (if
 available). Default is FALSE.}
@@ -17,7 +17,7 @@ tibble data frame
 }
 \description{
 Extract the synthetic control as a data frame generated using
-\code{generate_control()} from the \code{synth_tbl}.
+\code{generate_control()} from the synth pipeline.
 }
 \examples{
 

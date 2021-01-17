@@ -20,12 +20,11 @@ generate_weights(
 )
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl} generated from
-\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
-information on how a \code{sythn_tbl} object is organized. In addition, a matrix
-of predictors must be prespecified using the \code{generate_predictor()}
-function. See documentation for more information on how to generate a
-predictor function.}
+\item{data}{nested data of type \code{tbl_df} generated from \code{sythetic_control()}.
+See \code{synthetic_control()} documentation for more information. In addition,
+a matrix of predictors must be prespecified using the
+\code{generate_predictor()} function. See documentation for more information on
+how to generate a predictor function.}
 
 \item{optimization_window}{the temporal window of the pre-intervention
 outcome time series to be used in the optimization task. Default behavior
@@ -39,7 +38,7 @@ faster when a custom variable weights are provided. Default behavior
 assumes no wieghts are provided and thus must be learned from the data.}
 
 \item{include_fit}{Boolean flag, if TRUE, then the optimization output is
-included in the outputted \code{synth_tbl}.}
+included in the outputted \code{tbl_df}.}
 
 \item{optimization_method}{string vector that specifies the optimization
 algorithms to be used. Permissable values are all optimization algorithms
@@ -48,8 +47,9 @@ for details). This list currently includes c('Nelder-Mead', 'BFGS', 'CG',
 'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
 are specified, synth will run the optimization with all chosen algorithms
 and then return the result for the best performing method. Default is
-c('Nelder-Mead','BFGS'). As an additional possibility, the user can also specify 'All' which
-means that synth will run the results over all algorithms in optimx.}
+c('Nelder-Mead','BFGS'). As an additional possibility, the user can also
+specify 'All' which means that synth will run the results over all
+algorithms in optimx.}
 
 \item{genoud}{Logical flag. If true, synth embarks on a two step
 optimization. In the first step, genoud, an optimization function that
@@ -81,7 +81,7 @@ the variables (see ipop for details)}
 adjust optimization.}
 }
 \value{
-\code{synth_tbl} with nested fields containing the following:
+\code{tbl_df} with nested fields containing the following:
 \itemize{
 \item \code{.id}: unit id for the intervention case (this will differ when a placebo
 unit).

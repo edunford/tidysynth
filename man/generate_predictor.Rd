@@ -7,9 +7,9 @@
 generate_predictor(data, time_window = NULL, ...)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl} generated from
+\item{data}{nested data of type \code{tbl_df} generated from
 \code{sythetic_control()}. See \code{synthetic_control()} documentation for more
-information on how a \code{sythn_tbl} object is organized.}
+information.}
 
 \item{time_window}{set time window from the pre-intervention period that the
 data should be aggregated across to generate the specific predictor.
@@ -22,7 +22,7 @@ all summary functions \code{na.rm = TRUE} argument should be specified as
 aggregating across units with missing values is a common occurrence.}
 }
 \value{
-\code{synth_tbl} with nested fields containing the following:
+\code{tbl_df} with nested fields containing the following:
 \itemize{
 \item \code{.id}: unit id for the intervention case (this will differ when a placebo
 unit).

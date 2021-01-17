@@ -7,7 +7,7 @@
 grab_outcome(data, type = "treated", placebo = F)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}}
+\item{data}{nested data of type \code{tbl_df}}
 
 \item{type}{string specifying which version of the data to extract: "treated"
 or "control". Default is "treated".}
@@ -19,7 +19,7 @@ available). Default is FALSE.}
 tibble data frame
 }
 \description{
-Extract a data frame containing the outcome variable from the \code{synth_tbl}.
+Extract a data frame containing the outcome variable from the synth pipline.
 }
 \examples{
 

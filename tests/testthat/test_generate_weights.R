@@ -53,7 +53,7 @@ test_that("Test generate_weights() with placebos",{
 
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
 
   # Check output weights class
   expect_is(synth_out$.unit_weights[[1]],"tbl_df")
@@ -157,7 +157,7 @@ test_that("Test constraining the optimization window",{
 
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
 
   # Check output weights class
   expect_is(synth_out$.unit_weights[[1]],"tbl_df")

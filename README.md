@@ -12,8 +12,8 @@ intervention in comparative case studies. The method aims to model a
 counterfactual unit using a weighted average of units that did not
 receive the intervention. The effect of the intervention can be
 estimated by comparing differences in the observed and synthetic time
-series. See Abadie et al.
-[2003](https://www.aeaweb.org/articles?id=10.1257/000282803321455188),
+series. See Abadie et
+al. [2003](https://www.aeaweb.org/articles?id=10.1257/000282803321455188),
 [2010](https://economics.mit.edu/files/11859),
 [2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12116) for
 more on the method and use cases.
@@ -52,7 +52,7 @@ control.
 
 | Function               | Description                                                                                                                                                     |
 | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `synthetic_control()`  | Initialize a `synth_tbl` by specifying the panel series, outcome, and intervention period.                                                                      |
+| `synthetic_control()`  | Initialize a synth pipeline by specifying the panel series, outcome, and intervention period. This pipeline operates as a nested `tbl_df`                       |
 | `generate_predictor()` | Create one or more scalar variables summarizing covariate data across a specified time window. These predictor variables are used to fit the synthetic control. |
 | `generate_weights()`   | Fit the unit and predictor weights used to generate the synthetic control.                                                                                      |
 | `generate_control()`   | Generate the synthetic control using the optimized weights.                                                                                                     |
@@ -67,8 +67,8 @@ data("smoking")
 smoking %>% dplyr::glimpse()
 ```
 
-    ## Observations: 1,209
-    ## Variables: 7
+    ## Rows: 1,209
+    ## Columns: 7
     ## $ state     <chr> "Rhode Island", "Tennessee", "Indiana", "Nevada", "Louisian…
     ## $ year      <dbl> 1970, 1970, 1970, 1970, 1970, 1970, 1970, 1970, 1970, 1970,…
     ## $ cigsale   <dbl> 123.9, 99.8, 134.6, 189.5, 115.9, 108.4, 265.7, 93.8, 100.3…
@@ -131,8 +131,7 @@ smoking_out <-
 Once the synthetic control is generated, one can easily assess the fit
 by comparing the trends of the synthetic and observed time series. The
 idea is that the trends in the pre-intervention period should map
-closely onto one
-another.
+closely onto one another.
 
 ``` r
 smoking_out %>% plot_trends()
@@ -152,8 +151,7 @@ smoking_out %>% plot_differences()
 
 In addition, one can easily examine the weighting of the units and
 variables in the fit. This allows one to see which cases were used, in
-part, to generate the synthetic
-control.
+part, to generate the synthetic control.
 
 ``` r
 smoking_out %>% plot_weights()
@@ -185,12 +183,11 @@ smoking_out %>% grab_balance_table()
 For inference, the method relies on repeating the method for every donor
 in the donor pool exactly as was done for the treated unit —
 i.e. generating *placebo* synthetic controls). By setting
-`generate_placebos = TRUE` when initializing the `synth_tbl` object with
+`generate_placebos = TRUE` when initializing the synth pipeline with
 `synthetic_control()`, placebo cases are automatically generated when
 constructing the synthetic control of interest. This makes it easy to
 explore how unique difference between the observed and synthetic unit is
-when compared to the
-placebos.
+when compared to the placebos.
 
 ``` r
 smoking_out %>% plot_placebos()
@@ -205,9 +202,8 @@ scale when plotting the placebos. To prune, the function looks at the
 pre-intervention period mean squared prediction error (MSPE) (i.e. a
 metric that reflects how well the synthetic control maps to the observed
 outcome time series in pre-intervention period). If a placebo control
-has a MSPE that is two times beyond the target case (e.g. “California”),
-then it’s dropped. To turn off this behavior, set `prune =
-FALSE`.
+has a MSPE that is two times beyond the target case (e.g. “California”),
+then it’s dropped. To turn off this behavior, set `prune = FALSE`.
 
 ``` r
 smoking_out %>% plot_placebos(prune = FALSE)
@@ -265,10 +261,10 @@ smoking_out %>% grab_signficance()
 In addition to the main data pipeline for generating the synthetic
 control and the `plot_` prefix functions for visualizing the output,
 there are a number of `grab_` prefix functions that offer easy access to
-the data contained within a `synth_tbl` object.
+the data contained within a synth pipeline object.
 
-At its core, a `synth_tbl` is simply a nested tibble data frame, where
-each component of the synthetic control pipeline is accessible.
+At its core, a synth pipeline is simply a nested tibble data frame,
+where each component of the synthetic control pipeline is accessible.
 
 ``` r
 smoking_out
@@ -291,8 +287,7 @@ smoking_out
     ## #   .original_data <list>, .meta <list>, .loss <list>
 
 To access the relevant data fields, the `grab_` prefix functions come
-into
-play.
+into play.
 
 | Function                   | Description                                                                                                                                        |
 | :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -348,16 +343,15 @@ smoking_out %>% grab_synthetic_control(placebo = T)
 
 #### But say I really want to `unnest()`…
 
-In the current implementation, you cannot unpack an entire `synth_tbl`
-using `unnest()`. This is due to disparities in the dimensions between
-the donor and treated units. The `grab_` function is meant to streamline
-any specific extraction needs. Alternatively, once can unnest individual
-columns as per usual, but must first convert the `synth_tbl` to a
-`tibble` data type.
+In the current implementation, you can unpack an entire synth pipeline
+using `unnest()`. The `grab_` function is meant to streamline any
+specific extraction needs. The entire method is built on top of a
+tidyverse infrastructure, so one can side-step most of the package’s
+functionality and interact with the synth pipeline output as one would
+any nested `tbl_df` object.
 
 ``` r
 smoking_out %>% 
-  tibble::as_tibble() %>% 
   tidyr::unnest(cols = c(.outcome)) 
 ```
 

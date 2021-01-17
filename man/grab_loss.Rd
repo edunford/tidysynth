@@ -7,13 +7,13 @@
 grab_loss(data)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}}
+\item{data}{nested data of type \code{tbl_df}}
 }
 \value{
 tibble data frame
 }
 \description{
-Extract the RMSE loss of the optimized weights from the \code{synth_tbl}.
+Extract the RMSE loss of the optimized weights from the synth pipeline.
 }
 \examples{
 

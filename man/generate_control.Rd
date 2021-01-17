@@ -7,14 +7,13 @@
 generate_control(data)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl} generated from
-\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
-information on how a \code{sythn_tbl} object is organized. In addition,
+\item{data}{nested data of type \code{tbl_df} generated from \code{sythetic_control()}.
+See \code{synthetic_control()} documentation for more information. In addition,
 \code{.unit_weights} must be generate using \code{generate_weights()}. See
 documentation for more information on how to generate weights.}
 }
 \value{
-\code{synth_tbl} with nested fields containing the following:
+\code{tbl_df} with nested fields containing the following:
 \itemize{
 \item \code{.id}: unit id for the intervention case (this will differ when a placebo
 unit).

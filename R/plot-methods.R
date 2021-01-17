@@ -13,7 +13,7 @@
 #' See `?generate_control()` for information on how to generate a synthetic
 #' control unit.
 #'
-#' @param data nested data of type `synth_tbl`.
+#' @param data nested data of type `tbl_df`.
 #' @param time_window time window of the trend plot.
 #'
 #' @return `ggplot` object of the observed and synthetic trends.
@@ -74,7 +74,7 @@ plot_trends <- function(data,time_window=NULL){
 }
 
 #' @export
-plot_trends.synth_tbl <- function(data,time_window=NULL){
+plot_trends <- function(data,time_window=NULL){
 
   # Check if .meta is in data.
   if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
@@ -114,7 +114,7 @@ plot_trends.synth_tbl <- function(data,time_window=NULL){
 #' difference captures the causal quantity (i.e. the magnitude of the difference
 #' between the observed and counterfactual case).
 #'
-#' @param data nested data of type `synth_tbl`.
+#' @param data nested data of type `tbl_df`.
 #' @param time_window time window of the trend plot.
 #'
 #' @return `ggplot` object of the difference between the observed and synthetic
@@ -223,11 +223,11 @@ plot_differences <- function(data,time_window=NULL){
 #' when a particular placebo case has poor fit in the pre-period.
 #'
 #' See documentation on `?synthetic_control` on how to generate placebo cases.
-#' When initializing a `synth_tbl`, set the `generate_placebos` argument to
+#' When initializing a synth pipeline, set the `generate_placebos` argument to
 #' `TRUE`. The processing pipeline remains the same.
 #'
-#' @param data nested data of type `synth_tbl`.
-#' @param time_window time window of the trend plot.
+#' @param data nested data of type `tbl_df`.
+#' @param time_window time window of the tbl_df plot.
 #' @param prune boolean flag; if TRUE, then all placebo cases with a pre-period
 #'   RMSPE exceeding two times the treated unit pre-period RMSPE are pruned;
 #'   Default is TRUE.
@@ -368,7 +368,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
 #'
 #' See `grab_unit_weights()` and `grab_predictor_weights()`
 #'
-#' @param data nested data of type `synth_tbl`.
+#' @param data nested data of type `tbl_df`.
 #'
 #' @return a `ggplot` object that plots the unit and variable weights.
 #' @export
@@ -435,7 +435,7 @@ plot_weights <- function(data){
     grab_unit_weights(data,placebo = F) %>%
       dplyr::mutate(type="Control Unit Weights (W)"),
 
-    grab_predictor_weights(.data,placebo = F) %>%
+    grab_predictor_weights(data,placebo = F) %>%
       dplyr::mutate(type="Variable Weights (V)") %>%
       dplyr::rename(unit = variable)
 
@@ -484,7 +484,7 @@ plot_weights <- function(data){
 #' al. 2010.
 #'
 #'
-#' @param data nested data of type `synth_tbl`.
+#' @param data nested data of type `tbl_df`.
 #' @param time_window time window that the pre- and post-period values should be
 #'   used to compute the MSPE ratio.
 #'

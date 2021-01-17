@@ -92,7 +92,7 @@ test_that("Test generate_control() with placebos",{
 
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
   expect_is(synth_out$.synthetic_control[[1]],"tbl_df")
 
   # Weights were generated for the placebo units (redundant)

@@ -7,9 +7,9 @@
 plot_placebos(data, time_window = NULL, prune = T)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}.}
+\item{data}{nested data of type \code{tbl_df}.}
 
-\item{time_window}{time window of the trend plot.}
+\item{time_window}{time window of the tbl_df plot.}
 
 \item{prune}{boolean flag; if TRUE, then all placebo cases with a pre-period
 RMSPE exceeding two times the treated unit pre-period RMSPE are pruned;
@@ -33,7 +33,7 @@ treated unit pre-period RMSPE are pruned. This helps overcome scale issues
 when a particular placebo case has poor fit in the pre-period.
 
 See documentation on \code{?synthetic_control} on how to generate placebo cases.
-When initializing a \code{synth_tbl}, set the \code{generate_placebos} argument to
+When initializing a synth pipeline, set the \code{generate_placebos} argument to
 \code{TRUE}. The processing pipeline remains the same.
 }
 \examples{

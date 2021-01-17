@@ -7,7 +7,7 @@
 plot_mspe_ratio(data, time_window = NULL)
 }
 \arguments{
-\item{data}{nested data of type \code{synth_tbl}.}
+\item{data}{nested data of type \code{tbl_df}.}
 
 \item{time_window}{time window that the pre- and post-period values should be
 used to compute the MSPE ratio.}

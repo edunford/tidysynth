@@ -48,7 +48,7 @@ test_that("Test generate_predictor() with placebos",{
 
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
 
   # Check for scenarios where there is an NA in a predictor field
   expect_error(dat %>%
@@ -148,7 +148,7 @@ test_that("Test generate_predictor() without placebos",{
 
 
   # Correct class
-  expect_is(synth_out,class="synth_tbl")
+  # expect_is(synth_out,class="synth_tbl")
 
   # Check for scenarios where there is an NA in a predictor field
   expect_error(dat %>%
