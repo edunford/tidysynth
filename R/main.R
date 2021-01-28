@@ -60,7 +60,7 @@
 #' ###### Basic Example #######
 #' ############################
 #'
-#' \dontrun{
+#' \donttest{
 #' # Smoking example data
 #' data(smoking)
 #'
@@ -72,7 +72,7 @@
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F)
+#'                   generate_placebos= FALSE)
 #'
 #' # data configuration
 #' dplyr::glimpse(smoking_out)
@@ -99,16 +99,16 @@
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos= FALSE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -301,7 +301,7 @@ synthetic_control.data.frame <- function(data = NULL,
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -315,13 +315,13 @@ synthetic_control.data.frame <- function(data = NULL,
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos= FALSE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T))
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE))
 #'
 #' # Extract respective predictor matrices
 #' smoking_out %>% grab_predictors(type = "treated")
@@ -403,7 +403,7 @@ generate_predictor <- function(data,time_window=NULL,...){
 
     # Check if there are NAs in the generated frame. If so, return an error.
     if(any(is.na(pred_trt)) | any(is.na(pred_cnt))){
-      stop("NA generated in specified predictors. Consider using `rm.na=T` in aggregation function or specifying a larger/different time window")
+      stop("NA generated in specified predictors. Consider using `rm.na= TRUE` in aggregation function or specifying a larger/different time window")
     }
 
 
@@ -583,7 +583,7 @@ generate_predictor <- function(data,time_window=NULL,...){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -597,16 +597,16 @@ generate_predictor <- function(data,time_window=NULL,...){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos= TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -627,8 +627,8 @@ generate_predictor <- function(data,time_window=NULL,...){
 #' smoking_out %>% grab_unit_weights()
 #'
 #' # Retrieve the placebo weights as well.
-#' smoking_out %>% grab_predictor_weights(placebo=T)
-#' smoking_out %>% grab_unit_weights(placebo=T)
+#' smoking_out %>% grab_predictor_weights(placebo= TRUE)
+#' smoking_out %>% grab_unit_weights(placebo= TRUE)
 #'
 #' # Plot the unit weights
 #' smoking_out %>% plot_weights()
@@ -674,7 +674,7 @@ generate_weights <-function(data,
   data_versions <- unique(data$.id)
 
   # Iterate through the data versions
-  master_nest <- NULL; first_pass <- TRUE; second_pass <- F
+  master_nest <- NULL; first_pass <- TRUE; second_pass <- FALSE
   for (v in data_versions){
 
     # Progress reports
@@ -949,7 +949,7 @@ synth_weights <- function(data,
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -963,16 +963,16 @@ synth_weights <- function(data,
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos= FALSE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%

@@ -26,7 +26,7 @@ NULL
 #'   California’s tobacco control program. Journal of the American statistical
 #'   Association, 105(490), pp.493-505.
 #'
-#' @source \url{https://economics.mit.edu/files/11859}
+#' @source https://economics.mit.edu/files/11859
 #'
 'smoking'
 

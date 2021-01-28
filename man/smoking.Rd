@@ -13,7 +13,7 @@ the population between 15 and 24} \item{retprice}{Retail price of a box of
 cigarettes} }
 }
 \source{
-\url{https://economics.mit.edu/files/11859}
+https://economics.mit.edu/files/11859
 }
 \usage{
 data(smoking)

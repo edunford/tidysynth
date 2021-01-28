@@ -21,7 +21,7 @@
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -35,16 +35,16 @@
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -89,7 +89,7 @@ plot_trends <- function(data,time_window=NULL){
 
   # Generate plot
   data %>%
-    grab_synthetic_control(placebo = F) %>%
+    grab_synthetic_control(placebo = FALSE) %>%
     dplyr::filter(time_unit %in% time_window) %>%
     dplyr::rename(Synthetic= synth_y,
                   Observed= real_y) %>%
@@ -126,7 +126,7 @@ plot_trends <- function(data,time_window=NULL){
 #' @examples
 #'
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -140,16 +140,16 @@ plot_trends <- function(data,time_window=NULL){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -194,7 +194,7 @@ plot_differences <- function(data,time_window=NULL){
 
   # Generate plot
   data %>%
-    grab_synthetic_control(placebo = F) %>%
+    grab_synthetic_control(placebo = FALSE) %>%
     dplyr::mutate(diff = real_y-synth_y) %>%
     dplyr::filter(time_unit %in% time_window) %>%
     ggplot2::ggplot(ggplot2::aes(time_unit,diff)) +
@@ -238,7 +238,7 @@ plot_differences <- function(data,time_window=NULL){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -252,16 +252,16 @@ plot_differences <- function(data,time_window=NULL){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -285,12 +285,12 @@ plot_differences <- function(data,time_window=NULL){
 #'
 #' }
 #'
-plot_placebos <- function(data,time_window=NULL,prune=T){
+plot_placebos <- function(data,time_window=NULL,prune=TRUE){
   UseMethod("plot_placebos")
 }
 
 #' @export
-plot_placebos <- function(data,time_window=NULL,prune=T){
+plot_placebos <- function(data,time_window=NULL,prune=TRUE){
 
   # Check if .meta is in data.
   if(!(".meta" %in% colnames(data))){stop("`.meta` column has been removed. `.meta` column needs to be included for `generte_control()` to work.")}
@@ -308,7 +308,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
   # Generate plot data
   plot_data <-
     data %>%
-    grab_synthetic_control(placebo = T) %>%
+    grab_synthetic_control(placebo = TRUE) %>%
     dplyr::mutate(diff = real_y-synth_y) %>%
     dplyr::filter(time_unit %in% time_window) %>%
     dplyr::mutate(type_text = ifelse(.placebo==0,treatment_unit,"control units"),
@@ -375,7 +375,7 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -389,16 +389,16 @@ plot_placebos <- function(data,time_window=NULL,prune=T){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -432,10 +432,10 @@ plot_weights <- function(data){
   # Combine the different type of weight outputs
   dplyr::bind_rows(
 
-    grab_unit_weights(data,placebo = F) %>%
+    grab_unit_weights(data,placebo = FALSE) %>%
       dplyr::mutate(type="Control Unit Weights (W)"),
 
-    grab_predictor_weights(data,placebo = F) %>%
+    grab_predictor_weights(data,placebo = FALSE) %>%
       dplyr::mutate(type="Variable Weights (V)") %>%
       dplyr::rename(unit = variable)
 
@@ -445,7 +445,7 @@ plot_weights <- function(data){
     dplyr::arrange(weight) %>%
     dplyr::mutate(unit = forcats::fct_reorder(unit,weight)) %>%
     ggplot2::ggplot(ggplot2::aes(unit,weight,fill=type,color=type)) +
-    ggplot2::geom_col(show.legend = F,alpha=.65) +
+    ggplot2::geom_col(show.legend = FALSE,alpha=.65) +
     ggplot2::coord_flip() +
     ggplot2::labs(x="") +
     ggplot2::facet_wrap(~type,ncol = 2,scales="free") +
@@ -493,7 +493,7 @@ plot_weights <- function(data){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -507,16 +507,16 @@ plot_weights <- function(data){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%

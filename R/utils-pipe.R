@@ -5,6 +5,7 @@
 #' @name %>%
 #' @rdname pipe
 #' @keywords internal
+#' @return passes data object to the subsequent function.
 #' @export
 #' @importFrom magrittr %>%
 #' @usage lhs \%>\% rhs

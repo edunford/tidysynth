@@ -4,7 +4,7 @@
 \alias{grab_synthetic_control}
 \title{grab_synthetic_control}
 \usage{
-grab_synthetic_control(data, placebo = F)
+grab_synthetic_control(data, placebo = FALSE)
 }
 \arguments{
 \item{data}{nested data of type \code{tbl_df}}
@@ -21,7 +21,7 @@ Extract the synthetic control as a data frame generated using
 }
 \examples{
 
-\dontrun{
+\donttest{
 
 # Smoking example data
 data(smoking)
@@ -35,16 +35,16 @@ synthetic_control(outcome = cigsale,
                   time = year,
                   i_unit = "California",
                   i_time = 1988,
-                  generate_placebos=T) \%>\%
+                  generate_placebos=TRUE) \%>\%
 
 # Generate the aggregate predictors used to generate the weights
   generate_predictor(time_window=1980:1988,
-                     lnincome = mean(lnincome, na.rm = T),
-                     retprice = mean(retprice, na.rm = T),
-                     age15to24 = mean(age15to24, na.rm = T)) \%>\%
+                     lnincome = mean(lnincome, na.rm = TRUE),
+                     retprice = mean(retprice, na.rm = TRUE),
+                     age15to24 = mean(age15to24, na.rm = TRUE)) \%>\%
 
   generate_predictor(time_window=1984:1988,
-                     beer = mean(beer, na.rm = T)) \%>\%
+                     beer = mean(beer, na.rm = TRUE)) \%>\%
 
   generate_predictor(time_window=1975,
                      cigsale_1975 = cigsale) \%>\%
@@ -68,7 +68,7 @@ smoking_out \%>\% grab_synthetic_control()
 
 
 # Grab the data frame with the placebos.
-smoking_out \%>\% grab_synthetic_control(placebo=T)
+smoking_out \%>\% grab_synthetic_control(placebo=TRUE)
 
 }
 

@@ -16,7 +16,7 @@ synth_method(
   Margin.ipop = 5e-04,
   Sigf.ipop = 5,
   Bound.ipop = 10,
-  verbose = F,
+  verbose = FALSE,
   ...
 )
 }

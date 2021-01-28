@@ -79,7 +79,7 @@ synth_method <- function (treatment_unit_covariates = NULL,
                           Margin.ipop = 5e-04,
                           Sigf.ipop = 5,
                           Bound.ipop = 10,
-                          verbose = F,
+                          verbose = FALSE,
                           ...)
 {
   # Allocate the relevant data to list

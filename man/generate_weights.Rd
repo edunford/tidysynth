@@ -164,7 +164,7 @@ time as the variable weights do not be learned for every placebo entry.
 }
 \examples{
 
-\dontrun{
+\donttest{
 
 # Smoking example data
 data(smoking)
@@ -178,16 +178,16 @@ synthetic_control(outcome = cigsale,
                   time = year,
                   i_unit = "California",
                   i_time = 1988,
-                  generate_placebos=T) \%>\%
+                  generate_placebos= TRUE) \%>\%
 
 # Generate the aggregate predictors used to generate the weights
   generate_predictor(time_window=1980:1988,
-                     lnincome = mean(lnincome, na.rm = T),
-                     retprice = mean(retprice, na.rm = T),
-                     age15to24 = mean(age15to24, na.rm = T)) \%>\%
+                     lnincome = mean(lnincome, na.rm = TRUE),
+                     retprice = mean(retprice, na.rm = TRUE),
+                     age15to24 = mean(age15to24, na.rm = TRUE)) \%>\%
 
   generate_predictor(time_window=1984:1988,
-                     beer = mean(beer, na.rm = T)) \%>\%
+                     beer = mean(beer, na.rm = TRUE)) \%>\%
 
   generate_predictor(time_window=1975,
                      cigsale_1975 = cigsale) \%>\%
@@ -208,8 +208,8 @@ smoking_out \%>\% grab_predictor_weights()
 smoking_out \%>\% grab_unit_weights()
 
 # Retrieve the placebo weights as well.
-smoking_out \%>\% grab_predictor_weights(placebo=T)
-smoking_out \%>\% grab_unit_weights(placebo=T)
+smoking_out \%>\% grab_predictor_weights(placebo= TRUE)
+smoking_out \%>\% grab_unit_weights(placebo= TRUE)
 
 # Plot the unit weights
 smoking_out \%>\% plot_weights()

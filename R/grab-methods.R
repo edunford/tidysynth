@@ -1,4 +1,4 @@
-# All grab_ methods used in the syntehtic_control package.
+# All grab_ methods used in the synthetic_control package.
 
 
 #' grab_unit_weights
@@ -14,7 +14,7 @@
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -28,16 +28,16 @@
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -57,16 +57,16 @@
 #' smoking_out %>% grab_unit_weights()
 #'
 #' # Grab the unit weights for the placebo units as well.
-#' smoking_out %>% grab_unit_weights(placebo=T)
+#' smoking_out %>% grab_unit_weights(placebo=TRUE)
 #'
 #' }
 #'
-grab_unit_weights <- function(data,placebo=F){
+grab_unit_weights <- function(data,placebo=FALSE){
   UseMethod("grab_unit_weights")
 }
 
 #' @export
-grab_unit_weights <- function(data,placebo=F){
+grab_unit_weights <- function(data,placebo=FALSE){
   # Check if .unit_weights is in data.
   if(!(".unit_weights" %in% colnames(data))){
     stop("`.unit_weights` column is missing. Please run `generate_weights()` to generate this data field.")
@@ -108,7 +108,7 @@ grab_unit_weights <- function(data,placebo=F){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -122,16 +122,16 @@ grab_unit_weights <- function(data,placebo=F){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos=FALSE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -158,12 +158,12 @@ grab_unit_weights <- function(data,placebo=F){
 #'
 #' }
 #'
-grab_predictors <- function(data,type="treated",placebo=F){
+grab_predictors <- function(data,type="treated",placebo=FALSE){
   UseMethod("grab_predictors")
 }
 
 #' @export
-grab_predictors <- function(data,type="treated",placebo=F){
+grab_predictors <- function(data,type="treated",placebo=FALSE){
 
   # Checks
   if(!".predictors" %in% colnames(data)){ stop("Predictors must be generated prior to running using `generate_predictors()`.")}
@@ -204,7 +204,7 @@ grab_predictors <- function(data,type="treated",placebo=F){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -218,16 +218,16 @@ grab_predictors <- function(data,type="treated",placebo=F){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos=FALSE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -254,12 +254,12 @@ grab_predictors <- function(data,type="treated",placebo=F){
 #'
 #' }
 #'
-grab_outcome <- function(data,type="treated",placebo=F){
+grab_outcome <- function(data,type="treated",placebo=FALSE){
   UseMethod("grab_outcome")
 }
 
 #' @export
-grab_outcome <- function(data,type="treated",placebo=F){
+grab_outcome <- function(data,type="treated",placebo=FALSE){
 
   if(placebo){
 
@@ -296,7 +296,7 @@ grab_outcome <- function(data,type="treated",placebo=F){
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -310,16 +310,16 @@ grab_outcome <- function(data,type="treated",placebo=F){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -342,16 +342,16 @@ grab_outcome <- function(data,type="treated",placebo=F){
 #' smoking_out %>% grab_predictor_weights()
 #'
 #' # Grab the predictor weights data frame for the placebo units as well.
-#' smoking_out %>% grab_predictor_weights(placebo=T)
+#' smoking_out %>% grab_predictor_weights(placebo=TRUE)
 #'
 #' }
 #'
-grab_predictor_weights <- function(data,placebo=F){
+grab_predictor_weights <- function(data,placebo=FALSE){
   UseMethod("grab_predictor_weights")
 }
 
 #' @export
-grab_predictor_weights <- function(data,placebo=F){
+grab_predictor_weights <- function(data,placebo=FALSE){
 
 
   # Check if .predictor_weights is in data.
@@ -391,7 +391,7 @@ grab_predictor_weights <- function(data,placebo=F){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -405,16 +405,16 @@ grab_predictor_weights <- function(data,placebo=F){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -471,7 +471,7 @@ grab_loss <- function(data){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -485,16 +485,16 @@ grab_loss <- function(data){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=T) %>%
+#'                   generate_placebos=TRUE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -518,16 +518,16 @@ grab_loss <- function(data){
 #'
 #'
 #' # Grab the data frame with the placebos.
-#' smoking_out %>% grab_synthetic_control(placebo=T)
+#' smoking_out %>% grab_synthetic_control(placebo=TRUE)
 #'
 #' }
 #'
-grab_synthetic_control <- function(data,placebo=F){
+grab_synthetic_control <- function(data,placebo=FALSE){
   UseMethod("grab_synthetic_control")
 }
 
 #' @export
-grab_synthetic_control <- function(data,placebo=F){
+grab_synthetic_control <- function(data,placebo=FALSE){
 
   # Check if .synthetic_control is in data.
   if(!(".synthetic_control" %in% colnames(data))){
@@ -597,7 +597,7 @@ grab_synthetic_control <- function(data,placebo=F){
 #' @param time_window time window that the significance values should be
 #'   computed.
 #'
-#' @return tibble data frame contiaing the following fields:
+#' @return tibble data frame containing the following fields:
 #'
 #'   - `unit_name`: name of the unit
 #'
@@ -627,7 +627,7 @@ grab_synthetic_control <- function(data,placebo=F){
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' # Smoking example data
 #' data(smoking)
@@ -641,16 +641,16 @@ grab_synthetic_control <- function(data,placebo=F){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos=FALSE) %>%
 #'
 #' # Generate the aggregate predictors used to generate the weights
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
@@ -695,7 +695,7 @@ grab_signficance <- function(data,time_window = NULL){
 
   # Formulate the output data using the donor and treated synthetic controls
   data %>%
-    grab_synthetic_control(placebo = T) %>%
+    grab_synthetic_control(placebo = TRUE) %>%
     dplyr::filter(time_unit %in% time_window) %>%
     dplyr::group_by(.id, period = ifelse(time_unit <= trt_time,"pre_mspe","post_mspe"))  %>%
     dplyr::summarize(.placebo = mean(.placebo),
@@ -722,11 +722,15 @@ grab_signficance <- function(data,time_window = NULL){
 #'
 #' @param data nested data of type `tbl_df`
 #'
+#' @return tibble data frame containing balance statistics between the
+#'   observed/synthetic unit and the donor pool for each variable used to fit
+#'   the synthetic control.
+#'
 #' @export
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #' data(smoking)
 #' smoking_out <-
 #' smoking %>%
@@ -735,13 +739,13 @@ grab_signficance <- function(data,time_window = NULL){
 #'                   time = year,
 #'                   i_unit = "California",
 #'                   i_time = 1988,
-#'                   generate_placebos=F) %>%
+#'                   generate_placebos=FALSE) %>%
 #'   generate_predictor(time_window=1980:1988,
-#'                      lnincome = mean(lnincome, na.rm = T),
-#'                      retprice = mean(retprice, na.rm = T),
-#'                      age15to24 = mean(age15to24, na.rm = T)) %>%
+#'                      lnincome = mean(lnincome, na.rm = TRUE),
+#'                      retprice = mean(retprice, na.rm = TRUE),
+#'                      age15to24 = mean(age15to24, na.rm = TRUE)) %>%
 #'   generate_predictor(time_window=1984:1988,
-#'                      beer = mean(beer, na.rm = T)) %>%
+#'                      beer = mean(beer, na.rm = TRUE)) %>%
 #'   generate_predictor(time_window=1975,
 #'                      cigsale_1975 = cigsale) %>%
 #'   generate_predictor(time_window=1980,
@@ -772,7 +776,7 @@ grab_balance_table <- function(data){
   # Treated mean values
   treated_values <-
     data %>%
-    grab_predictors(type="treated",placebo = F)
+    grab_predictors(type="treated",placebo = FALSE)
 
   # Synthetic Control Weighted Values
   control_values =

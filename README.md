@@ -18,8 +18,7 @@ al. [2003](https://www.aeaweb.org/articles?id=10.1257/000282803321455188),
 [2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12116) for
 more on the method and use cases.
 
-Building on the
-[`Synth`](https://cran.r-project.org/web/packages/Synth/Synth.pdf)
+Building on the [`Synth`](https://CRAN.R-project.org/package=Synth)
 package, `tidysynth` makes a number of improvements when implementing
 the method in `R`. These improvements allow users to inspect, visualize,
 and tune the synthetic control more easily. A key benefit of a tidy
@@ -39,6 +38,14 @@ Specifically, the package:
     pipeline.
 
 ## Installation
+
+Cran.
+
+``` r
+install.packages('tidysynth')
+```
+
+Developer Version.
 
 ``` r
 # install.packages("devtools")
@@ -137,7 +144,7 @@ closely onto one another.
 smoking_out %>% plot_trends()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 To capture the causal quantity (i.e. the difference between the observed
 and counterfactual), one can plot the differences using
@@ -147,7 +154,7 @@ and counterfactual), one can plot the differences using
 smoking_out %>% plot_differences()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 In addition, one can easily examine the weighting of the units and
 variables in the fit. This allows one to see which cases were used, in
@@ -157,7 +164,7 @@ part, to generate the synthetic control.
 smoking_out %>% plot_weights()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 Another useful way of evaluating the synthetic control is to look at how
 comparable the synthetic control is to the observed covariates of the
@@ -193,7 +200,7 @@ when compared to the placebos.
 smoking_out %>% plot_placebos()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 Note that the `plot_placebos()` function automatically prunes any
 placebos that poorly fit the data in the pre-intervention period. The
@@ -209,7 +216,7 @@ then it’s dropped. To turn off this behavior, set `prune = FALSE`.
 smoking_out %>% plot_placebos(prune = FALSE)
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 
 Finally, Adabie et al. 2010 outline a way of constructing Fisher’s Exact
 P-values by dividing the post-intervention MSPE by the pre-intervention
@@ -232,7 +239,7 @@ occurred.
 smoking_out %>% plot_mspe_ratio()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 
 For more specific information, there is a significance table that can be
 extracted with one of the many `grab_` prefix functions.
