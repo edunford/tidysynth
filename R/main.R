@@ -761,7 +761,7 @@ generate_weights <-function(data,
 #'   optimization over w weights. possible values are "ipop" and "LowRankQP"
 #'   (see ipop and LowRankQP for details). default is 'ipop'
 #' @param Margin.ipop setting for ipop optimization routine: how close we get to
-#'   the constrains (see ipop for details)
+#'   the constraints (see ipop for details)
 #' @param Sigf.ipop setting for ipop optimization routine: Precision (default: 7
 #'   significant figures (see ipop for details)
 #' @param Bound.ipop setting for ipop optimization routine: Clipping bound for

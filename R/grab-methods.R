@@ -550,7 +550,7 @@ grab_synthetic_control <- function(data,placebo=FALSE){
 
 
 
-#' grab_signficance
+#' grab_significance
 #'
 #' Generate inferential statistics comparing the rarety of the unit that
 #' actually received the intervention to the placebo units in the donor pool.
@@ -670,16 +670,16 @@ grab_synthetic_control <- function(data,placebo=FALSE){
 #'   generate_control()
 #'
 #' # Plot the observed and synthetic trend
-#' smoking_out %>% grab_signficance(time_window = 1970:2000)
+#' smoking_out %>% grab_significance(time_window = 1970:2000)
 #'
 #' }
 #'
-grab_signficance <- function(data,time_window = NULL){
-  UseMethod("grab_signficance")
+grab_significance <- function(data,time_window = NULL){
+  UseMethod("grab_significance")
 }
 
 #' @export
-grab_signficance <- function(data,time_window = NULL){
+grab_significance <- function(data,time_window = NULL){
 
   # Check if .synthetic_control is in data.
   if(!(".synthetic_control" %in% colnames(data))){stop("`.synthetic_control` column is missing. Please run `generate_control()` to generate this data field.")}

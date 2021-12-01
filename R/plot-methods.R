@@ -321,7 +321,7 @@ plot_placebos <- function(data,time_window=NULL,prune=TRUE){
   if (prune){
 
     # Gather significance field
-    sig_data = data %>% grab_signficance(time_window = time_window)
+    sig_data = data %>% grab_significance(time_window = time_window)
 
     # Treated units Pre-Period RMSPE
     thres <-
@@ -547,7 +547,7 @@ plot_mspe_ratio <- function(data,time_window=NULL){
 #' @export
 plot_mspe_ratio <- function(data,time_window=NULL){
   data %>%
-    grab_signficance(time_window=time_window) %>%
+    grab_significance(time_window=time_window) %>%
     dplyr::mutate(unit_name = forcats::fct_reorder(as.character(unit_name),mspe_ratio)) %>%
     ggplot2::ggplot(ggplot2::aes(unit_name,
                                  mspe_ratio,
