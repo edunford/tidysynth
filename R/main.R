@@ -179,6 +179,7 @@ synthetic_control.data.frame <- function(data = NULL,
       data %>%
       dplyr::filter(!!time <= i_time & !!unit != i_unit) %>% # Pre-intervention period
       dplyr::select(!!time,!!unit,!!outcome) %>%
+      dplyr::arrange(!!time,!!unit) %>%
       tidyr::pivot_wider(names_from=!!unit,values_from=!!outcome) %>%
       dplyr::rename(time_unit = !!time)
 
@@ -212,8 +213,8 @@ synthetic_control.data.frame <- function(data = NULL,
     data %>%
     dplyr::distinct(!!unit) %>%
     dplyr::mutate(placebo = ifelse(!!unit != i_unit,1,0)) %>%
-    dplyr::rename(unit_name = !!unit) %>%
-    dplyr::arrange(placebo)
+    dplyr::arrange(!!unit,placebo) %>%
+    dplyr::rename(unit_name = !!unit)
 
 
   # Build up dataset with treated and placebo data types
@@ -790,7 +791,7 @@ synth_weights <- function(data,
 
   # If no temporal window is set to use in the optimization task, use the entire
   # pretreatment period
-  if(is.null(time_window)){ time_window <- data$.outcome[[1]]$time_unit }
+  if(is.null(time_window)){ time_window <- max(data$.outcome[[1]]$time_unit)}
 
   # If placebo out version of the grab_ function, clear unnecessary fields
   is_placebo = ifelse(any(data$.placebo == 1),T,F)
