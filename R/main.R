@@ -391,9 +391,9 @@ generate_predictor <- function(data,time_window=NULL,...){
     }
 
 
-    # If a specific aggregation period is NOT specified, use the whole
+    # If a specific aggregation period is NOT specified, use the most recent year in the
     # pre-treatment period (don't use any unit in the post-treatment environment)
-    if(is.null(time_window)){ time_window <- data$.outcome[[1]]$time_unit}
+    if(is.null(time_window)){ time_window <- max(data$.outcome[[1]]$time_unit)}
 
 
     # Extract the relevant predictors for both unit types
@@ -652,17 +652,17 @@ generate_weights <-function(data,
 
 #' @export
 generate_weights <-function(data,
-                                      optimization_window = NULL,
-                                      custom_variable_weights = NULL,
-                                      include_fit = FALSE,
-                                      optimization_method = c('Nelder-Mead','BFGS'),
-                                      genoud = FALSE,
-                                      quadopt = "ipop",
-                                      margin_ipop = 5e-04,
-                                      sigf_ipop = 5,
-                                      bound_ipop = 10,
-                                      verbose = FALSE,
-                                      ...){
+                            optimization_window = NULL,
+                            custom_variable_weights = NULL,
+                            include_fit = FALSE,
+                            optimization_method = c('Nelder-Mead','BFGS'),
+                            genoud = FALSE,
+                            quadopt = "ipop",
+                            margin_ipop = 5e-04,
+                            sigf_ipop = 5,
+                            bound_ipop = 10,
+                            verbose = FALSE,
+                            ...){
 
 
   # Iterate through the versions of the data, and generate the predictors for
