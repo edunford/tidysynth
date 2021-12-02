@@ -691,7 +691,13 @@ grab_significance <- function(data,time_window = NULL){
   time_index <- data$.meta[[1]]$time_index
 
   # If no time window is specified for the table, calculate the entire series
-  if(is.null(time_window)){ time_window <- unique(data$.original_data[[1]][[time_index]])}
+  if(is.null(time_window)){
+    time_window <- unique(data$.original_data[[1]][[time_index]])
+  }else{
+    if(max(time_window) <= trt_time){
+      stop("The specified time window must contain post-treatment time units to calculate the post-MSPE. The current window only contains pretreatment periods. Please adjust.")
+    }
+  }
 
   # Formulate the output data using the donor and treated synthetic controls
   data %>%
