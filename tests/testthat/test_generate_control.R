@@ -145,8 +145,8 @@ test_that("Test grab_significance()",{
 
     generate_control()
 
-  # Test that the right significane table is produced
-  expect_equivalent(synth_out %>% grab_signficance() %>%
+  # Test that the right significance table is produced
+  expect_equivalent(synth_out %>% grab_significance() %>%
                       dplyr::mutate_if(is.numeric,function(x) round(x,3)),
                     tibble::tribble(
                       ~unit_name,     ~type,~pre_mspe,~post_mspe,~mspe_ratio,~rank,~fishers_exact_pvalue,           ~z_score,
