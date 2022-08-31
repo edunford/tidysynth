@@ -184,7 +184,7 @@ test_that("synthetic_control works when no placebos and when the treated country
 
   smoking2 <- smoking %>%
     dplyr::filter(state %in% c("Rhode Island", "Tennessee", "Connecticut", "California",
-                        "Nevada", "Indiana"))
+                        "Nevada", "Indiana", "Arkansas"))
   no_placebo <- smoking2 %>%
     synthetic_control(
       outcome = cigsale,
