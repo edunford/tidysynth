@@ -213,7 +213,7 @@ synthetic_control.data.frame <- function(data = NULL,
     data %>%
     dplyr::distinct(!!unit) %>%
     dplyr::mutate(placebo = ifelse(!!unit != i_unit,1,0)) %>%
-    dplyr::arrange(!!unit,placebo) %>%
+    dplyr::arrange(placebo, !!unit) %>%
     dplyr::rename(unit_name = !!unit)
 
 
