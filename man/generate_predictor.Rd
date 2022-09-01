@@ -8,7 +8,7 @@ generate_predictor(data, time_window = NULL, ...)
 }
 \arguments{
 \item{data}{nested data of type \code{tbl_df} generated from
-\code{sythetic_control()}. See \code{synthetic_control()} documentation for more
+\code{synthetic_control()}. See \code{synthetic_control()} documentation for more
 information.}
 
 \item{time_window}{set time window from the pre-intervention period that the

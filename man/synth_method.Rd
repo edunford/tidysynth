@@ -35,7 +35,7 @@ pre-treatment periods over which MSPE is to be minimized.}
 synth to bypass optimization for solution.V. See details.}
 
 \item{optimxmethod}{string vector that specifies the optimization algorithms
-to be used. Permissable values are all optimization algorithms that are
+to be used. Permissible values are all optimization algorithms that are
 currently implemented in the optimx function (see this function for
 details). This list currently includes c("Nelder-Mead', 'BFGS', 'CG',
 'L-BFGS-B', 'nlm', 'nlminb', 'spg', and 'ucminf"). If multiple algorithms
@@ -85,7 +85,7 @@ for diagnostics.
 \description{
 AUX Function: Original synthetic control method proposed by (Abadie et al.
 2003, 2010, 2015) and implemented in \code{synth} package. Method has been
-commendeered for internal use here.
+commandeered for internal use here.
 }
 \details{
 Synth works as the main engine of the \code{tidysynth} package. More on the method

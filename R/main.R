@@ -169,6 +169,7 @@ synthetic_control.data.frame <- function(data = NULL,
     # configure the outcome for the treated unit
     trt_outcome <-
       data %>%
+      dplyr::arrange(!!time) %>%
       dplyr::filter(!!time <= i_time & !!unit == i_unit) %>% # Pre-intervention period
       dplyr::select(!!time,!!unit,!!outcome) %>%
       tidyr::pivot_wider(names_from=!!unit,values_from=!!outcome) %>%
@@ -189,8 +190,8 @@ synthetic_control.data.frame <- function(data = NULL,
                      .placebo = placebo,
                      .type = c("treated","controls"),
                      .outcome = list(trt_outcome,cnt_outcome),
-                     .original_data = list(data %>% dplyr::filter(!!unit == i_unit),
-                                           data %>% dplyr::filter(!!unit != i_unit)),
+                     .original_data = list(data %>% dplyr::arrange(!!time) %>% dplyr::filter(!!unit == i_unit),
+                                           data %>% dplyr::arrange(!!time) %>% dplyr::filter(!!unit != i_unit)),
                      .meta = list(tibble::tibble(unit_index=rlang::quo_text(unit),
                                                  time_index=rlang::quo_text(time),
                                                  treatment_unit = i_unit,
@@ -260,7 +261,7 @@ synthetic_control.data.frame <- function(data = NULL,
 #'
 #'
 #' @param data nested data of type `tbl_df` generated from
-#'   `sythetic_control()`. See `synthetic_control()` documentation for more
+#'   `synthetic_control()`. See `synthetic_control()` documentation for more
 #'   information.
 #' @param time_window set time window from the pre-intervention period that the
 #'   data should be aggregated across to generate the specific predictor.
@@ -668,7 +669,7 @@ generate_weights <-function(data,
 
   # Iterate through the versions of the data, and generate the predictors for
   # each version of the data (e.g. the treated and placebo sets) if user wants
-  # wieghts for each placebo dataset (a necessary condition for the inferential
+  # weights for each placebo dataset (a necessary condition for the inferential
   # strategy)
 
   # Grab data versions
@@ -1038,7 +1039,7 @@ generate_control <- function(data){
       dplyr::select(-unit) %>%
       as.matrix()
 
-    # coutcome time series for the control units
+    # outcome time series for the control units
     outcome_controls <-
       data %>%
       dplyr::filter(.placebo == is_placebo,.type=="controls") %>%
@@ -1072,7 +1073,7 @@ generate_control <- function(data){
                        real_y = outcome_treatment$y,
                        synth_y = weight)
 
-    # Join the synetic control the nested frame and return
+    # Join the synthetic control the nested frame and return
     out <-
       data %>%
       dplyr::mutate(.synthetic_control = list(synthetic_output,synthetic_output)) %>%
