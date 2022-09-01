@@ -180,13 +180,69 @@ test_that("Test initialization of a synth pipeline using sythetic_control() work
                       dplyr::filter(time_unit <= 1995))
 })
 
+test_that("synthetic_control works when no placebos and when the treated country doesn't come first in the data", {
 
+  smoking2 <- smoking %>%
+    dplyr::filter(state %in% c("Rhode Island", "Tennessee", "Connecticut", "California",
+                        "Nevada", "Indiana", "Arkansas"))
+  no_placebo <- smoking2 %>%
+    synthetic_control(
+      outcome = cigsale,
+      unit = state,
+      time = year,
+      i_unit = "California",
+      i_time = 1988,
+      generate_placebos = FALSE
+    ) %>%
+    generate_predictor(
+      time_window = 1980:1988,
+      ln_income = mean(lnincome, na.rm = T)
+    ) %>%
+    generate_weights(optimization_window = 1970:1988) %>%
+    generate_control()
 
+  with_placebo <- smoking2 %>%
+    synthetic_control(
+      outcome = cigsale,
+      unit = state,
+      time = year,
+      i_unit = "California",
+      i_time = 1988,
+      generate_placebos = TRUE
+    ) %>%
+    generate_predictor(
+      time_window = 1980:1988,
+      ln_income = mean(lnincome, na.rm = T)
+    ) %>%
+    generate_weights(optimization_window = 1970:1988) %>%
+    generate_control()
 
+  expect_identical(
+    with_placebo %>% grab_outcome(),
+    no_placebo %>% grab_outcome()
+  )
+  expect_identical(
+    with_placebo %>% grab_predictors(),
+    no_placebo %>% grab_predictors()
+  )
+  expect_identical(
+    with_placebo %>% grab_unit_weights(),
+    no_placebo %>% grab_unit_weights()
+  )
+  expect_identical(
+    with_placebo %>% grab_predictor_weights(),
+    no_placebo %>% grab_predictor_weights()
+  )
+  expect_identical(
+    with_placebo %>% grab_balance_table(),
+    no_placebo %>% grab_balance_table()
+  )
+  expect_identical(
+    with_placebo %>% grab_synthetic_control(),
+    no_placebo %>% grab_synthetic_control()
+  )
 
+  # grab_significance and grab_loss show the results even for the placebos
+  # so not tested here
 
-
-
-
-
-
+})
