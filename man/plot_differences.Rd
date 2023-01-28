@@ -15,12 +15,12 @@ plot_differences(data, time_window = NULL)
 \code{ggplot} object of the difference between the observed and synthetic
 trends.
 
-
+\code{ggplot} object of difference between the observed and synthetic control unit.
 }
 \description{
-Plot the difference between the observed and sythetic control unit. The
+Plot the difference between the observed and synthetic control unit. The
 difference captures the causal quantity (i.e. the magnitude of the difference
-between the observed and counterfactual case).
+between the observed and counter-factual case).
 }
 \examples{
 

@@ -19,7 +19,7 @@ https://economics.mit.edu/files/11859
 data(smoking)
 }
 \description{
-A dataset on the implmentation of Proposition 99 in California in 1988. Data
+A dataset on the implementation of Proposition 99 in California in 1988. Data
 contains information on California and 38 other (control/donor) states used
 in Abadie et al. 2010's paper walking through the synthetic control method.
 Covers the time range 1970 to 2000
