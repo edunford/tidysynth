@@ -23,7 +23,6 @@ Imports:
     forcats,
     rlang,
     kernlab,
-    LowRankQP,
     rgenoud,
     optimx,
     stats

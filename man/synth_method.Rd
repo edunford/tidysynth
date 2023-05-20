@@ -12,7 +12,6 @@ synth_method(
   custom.v = NULL,
   optimxmethod = c("Nelder-Mead", "BFGS"),
   genoud = FALSE,
-  quadopt = "ipop",
   Margin.ipop = 5e-04,
   Sigf.ipop = 5,
   Bound.ipop = 10,
@@ -55,10 +54,6 @@ for a local optimization within the neighborhood of the genoud solution.
 This two step optimization procedure will require much more computing time,
 but may yield lower loss in cases where the search space is highly
 irregular.}
-
-\item{quadopt}{string vector that specifies the routine for quadratic
-optimization over w weights. possible values are "ipop" and "LowRankQP"
-(see ipop and LowRankQP for details). default is 'ipop'}
 
 \item{Margin.ipop}{setting for ipop optimization routine: how close we get to
 the constrains (see ipop for details)}

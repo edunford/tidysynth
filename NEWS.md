@@ -8,3 +8,4 @@
 * Add check the ensures post-treatment periods are included when running `grab_significance()`.
 * Fixed issue where differences in temporal ordering in the data resulted in downstream distortions of the package output. Packaged now ensures the sequential time ordering when storing the original input data.
 * Fixed `synthetic_control()` when the treated unit doesn't come first in the data. 
+* Drop dependency on LowRankQP, which is no longer maintained. The existing default optimization method ("ipop") is now the sole optimization method used in the package. 

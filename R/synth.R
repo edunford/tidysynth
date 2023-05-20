@@ -35,9 +35,6 @@
 #'   This two step optimization procedure will require much more computing time,
 #'   but may yield lower loss in cases where the search space is highly
 #'   irregular.
-#' @param quadopt string vector that specifies the routine for quadratic
-#'   optimization over w weights. possible values are "ipop" and "LowRankQP"
-#'   (see ipop and LowRankQP for details). default is 'ipop'
 #' @param Margin.ipop setting for ipop optimization routine: how close we get to
 #'   the constrains (see ipop for details)
 #' @param Sigf.ipop setting for ipop optimization routine: Precision (default: 7
@@ -75,7 +72,6 @@ synth_method <- function (treatment_unit_covariates = NULL,
                           custom.v = NULL,
                           optimxmethod = c("Nelder-Mead", "BFGS"),
                           genoud = FALSE,
-                          quadopt = "ipop",
                           Margin.ipop = 5e-04,
                           Sigf.ipop = 5,
                           Bound.ipop = 10,
@@ -91,6 +87,8 @@ synth_method <- function (treatment_unit_covariates = NULL,
                 X0 = control_units_covariates,
                 Z1 = treatment_unit_outcome,
                 Z0 = control_units_outcome)
+  # Optimization option
+  quadopt = "ipop"
 
   # Checks
   for (i in 1:4) {
@@ -173,19 +171,10 @@ synth_method <- function (treatment_unit_covariates = NULL,
     l <- rep(0, length(c))
     u <- rep(1, length(c))
     r <- 0
-    if (quadopt == "ipop") {
-      res <- kernlab::ipop(c = c, H = H, A = A, b = b, l = l, u = u,
-                           r = r, bound = bound.ipop, margin = margin.ipop,
-                           maxiter = 1000, sigf = sigf.ipop)
-      solution.w <- as.matrix(kernlab::primal(res))
-    }
-    else {
-      if (quadopt == "LowRankQP") {
-        res <- LowRankQP::LowRankQP(Vmat = H, dvec = c, Amat = A, bvec = 1,
-                                    uvec = rep(1, length(c)), method = "LU")
-        solution.w <- as.matrix(res$alpha)
-      }
-    }
+    res <- kernlab::ipop(c = c, H = H, A = A, b = b, l = l, u = u,
+                         r = r, bound = bound.ipop, margin = margin.ipop,
+                         maxiter = 1000, sigf = sigf.ipop)
+    solution.w <- as.matrix(kernlab::primal(res))
     loss.w <- as.numeric(t(X1.scaled - X0.scaled %*% solution.w) %*%
                            (V) %*% (X1.scaled - X0.scaled %*% solution.w))
     loss.v <- as.numeric(t(Z1 - Z0 %*% solution.w) %*% (Z1 -
@@ -311,21 +300,11 @@ synth_method <- function (treatment_unit_covariates = NULL,
   l <- rep(0, length(c))
   u <- rep(1, length(c))
   r <- 0
-
-  if (quadopt == "ipop") {
+  if(quadopt == "ipop"){
     res <- kernlab::ipop(c = c, H = H, A = A, b = b, l = l, u = u,
                          r = r, margin = Margin.ipop, maxiter = 1000, sigf = Sigf.ipop,
                          bound = Bound.ipop)
     solution.w <- as.matrix(kernlab::primal(res))
-  }
-  else {
-
-    if (quadopt == "LowRankQP") {
-      res <- LowRankQP::LowRankQP(Vmat = H, dvec = c, Amat = A, bvec = 1,
-                                  uvec = rep(1, length(c)), method = "LU")
-      solution.w <- as.matrix(res$alpha)
-    }
-
   }
   rownames(solution.w) <- colnames(X0)
   colnames(solution.w) <- "w.weight"
