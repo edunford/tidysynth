@@ -9,9 +9,9 @@ output: github_document
 
 ## Overview
 
-`tidysynth` is a tidy implementation the [synthetic control method](https://en.wikipedia.org/wiki/Synthetic_control_method) in `R`. A synthetic control offers a way of evaluating the effect of an intervention in comparative case studies. The method aims to model a counterfactual unit using a weighted average of units that did not receive the intervention. The effect of the intervention can be estimated by comparing differences in the observed and synthetic time series. See Abadie et al. [2003](https://www.aeaweb.org/articles?id=10.1257/000282803321455188), 2010, [2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12116) for more on the method and use cases.
+`tidysynth` is a tidy implementation the [synthetic control method](https://en.wikipedia.org/wiki/Synthetic_control_method) in `R`. A synthetic control offers a way of evaluating the effect of an intervention in comparative case studies. The method aims to model a counterfactual unit using a weighted average of units that did not receive the intervention. The effect of the intervention can be estimated by comparing differences in the observed and synthetic time series. See Abadie et al. 2003, 2010, 2015 for more on the method and use cases.
 
-Building on the [`Synth`](https://CRAN.R-project.org/package=Synth) package, `tidysynth` makes a number of improvements when implementing the method in `R`. These improvements allow users to inspect, visualize, and tune the synthetic control more easily. A key benefit of a tidy implementation is that the entire preparation process for building the synthetic control can be accomplished in a single pipe.
+Building on the `Synth` package, `tidysynth` makes a number of improvements when implementing the method in `R`. These improvements allow users to inspect, visualize, and tune the synthetic control more easily. A key benefit of a tidy implementation is that the entire preparation process for building the synthetic control can be accomplished in a single pipe.
 
 Specifically, the package:
 
@@ -44,7 +44,7 @@ The package uses a pipeline of functions to generate the synthetic control.
 | `generate_weights()` | Fit the unit and predictor weights used to generate the synthetic control. |
 | `generate_control()` | Generate the synthetic control using the optimized weights. |
 
-The following example comes from [Abadie et al. 2010](https://economics.mit.edu/files/11859), which evaluates the impact of Proposition 99 on cigarette consumption in California. 
+The following example comes from Abadie et al. 2010, which evaluates the impact of Proposition 99 on cigarette consumption in California. 
 ```{r,message=F}
 require(tidysynth)
 data("smoking")
