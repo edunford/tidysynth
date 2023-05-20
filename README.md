@@ -14,9 +14,8 @@ receive the intervention. The effect of the intervention can be
 estimated by comparing differences in the observed and synthetic time
 series. See Abadie et
 al. [2003](https://www.aeaweb.org/articles?id=10.1257/000282803321455188),
-[2010](https://economics.mit.edu/files/11859),
-[2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12116) for
-more on the method and use cases.
+2010, [2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12116)
+for more on the method and use cases.
 
 Building on the [`Synth`](https://CRAN.R-project.org/package=Synth)
 package, `tidysynth` makes a number of improvements when implementing
@@ -27,15 +26,14 @@ synthetic control can be accomplished in a single pipe.
 
 Specifically, the package:
 
--   generates placebo synthetic controls on the fly allowing for
-    inferential statistics;
--   offers plotting methods to easily explore the fit of the synthetic
-    control and weights;
--   increases transparency and usability through a pipe-able
-    implementation;
--   relies on a nested tidy data structure with `grab_` prefix functions
-    to easily extract component elements from synthetic control
-    pipeline.
+- generates placebo synthetic controls on the fly allowing for
+  inferential statistics;
+- offers plotting methods to easily explore the fit of the synthetic
+  control and weights;
+- increases transparency and usability through a pipe-able
+  implementation;
+- relies on a nested tidy data structure with `grab_` prefix functions
+  to easily extract component elements from synthetic control pipeline.
 
 ## Installation
 
@@ -177,13 +175,13 @@ smoking_out %>% grab_balance_table()
     ## # A tibble: 7 × 4
     ##   variable     California synthetic_California donor_sample
     ##   <chr>             <dbl>                <dbl>        <dbl>
-    ## 1 ln_income        10.1                  9.84         9.83 
+    ## 1 ln_income        10.1                  9.85         9.83 
     ## 2 ret_price        89.4                 89.4         87.3  
     ## 3 youth             0.174                0.174        0.173
-    ## 4 beer_sales       24.3                 24.3         23.7  
+    ## 4 beer_sales       24.3                 24.2         23.7  
     ## 5 cigsale_1975    127.                 127.         137.   
     ## 6 cigsale_1980    120.                 120.         138.   
-    ## 7 cigsale_1988     90.1                 90.8        114.
+    ## 7 cigsale_1988     90.1                 91.4        114.
 
 ### Inference
 
@@ -221,7 +219,7 @@ smoking_out %>% plot_placebos(prune = FALSE)
 Finally, Adabie et al. 2010 outline a way of constructing Fisher’s Exact
 P-values by dividing the post-intervention MSPE by the pre-intervention
 MSPE and then ranking all the cases by this ratio in descending order. A
-p-value is then constructed by taking the rank/total.[1] The idea is
+p-value is then constructed by taking the rank/total.[^1] The idea is
 that if the synthetic control fits the observed time series well (low
 MSPE in the pre-period) and diverges in the post-period (high MSPE in
 the post-period) then there is a meaningful effect due to the
@@ -249,19 +247,19 @@ smoking_out %>% grab_significance()
 ```
 
     ## # A tibble: 39 × 8
-    ##    unit_name  type  pre_mspe post_mspe mspe_ratio  rank fishers_exact_p… z_score
-    ##    <chr>      <chr>    <dbl>     <dbl>      <dbl> <int>            <dbl>   <dbl>
-    ##  1 California Trea…     3.94     390.       99.0      1           0.0256  5.13  
-    ##  2 Georgia    Donor     3.48     174.       49.8      2           0.0513  2.33  
-    ##  3 Virginia   Donor     5.86     171.       29.2      3           0.0769  1.16  
-    ##  4 Indiana    Donor    18.4      415.       22.6      4           0.103   0.787 
-    ##  5 West Virg… Donor    14.3      287.       20.1      5           0.128   0.646 
-    ##  6 Connectic… Donor    27.3      335.       12.3      6           0.154   0.202 
-    ##  7 Nebraska   Donor     6.47      54.3       8.40     7           0.179  -0.0189
-    ##  8 Missouri   Donor     9.19      77.0       8.38     8           0.205  -0.0199
-    ##  9 Texas      Donor    24.5      160.        6.54     9           0.231  -0.125 
-    ## 10 Idaho      Donor    53.2      340.        6.39    10           0.256  -0.133 
-    ## # … with 29 more rows
+    ##    unit_name      type    pre_mspe post_mspe mspe_ratio  rank fishers_…¹ z_score
+    ##    <chr>          <chr>      <dbl>     <dbl>      <dbl> <int>      <dbl>   <dbl>
+    ##  1 California     Treated     3.17     392.      124.       1     0.0256  5.32  
+    ##  2 Georgia        Donor       3.79     179.       47.2      2     0.0513  1.70  
+    ##  3 Indiana        Donor      25.2      770.       30.6      3     0.0769  0.916 
+    ##  4 West Virginia  Donor       9.52     284.       29.8      4     0.103   0.881 
+    ##  5 Wisconsin      Donor      11.1      268.       24.1      5     0.128   0.607 
+    ##  6 Missouri       Donor       3.03      67.8      22.4      6     0.154   0.528 
+    ##  7 Texas          Donor      14.4      277.       19.3      7     0.179   0.383 
+    ##  8 South Carolina Donor      12.6      234.       18.6      8     0.205   0.351 
+    ##  9 Virginia       Donor       9.81      96.4       9.83     9     0.231  -0.0646
+    ## 10 Nebraska       Donor       6.30      52.9       8.40    10     0.256  -0.132 
+    ## # … with 29 more rows, and abbreviated variable name ¹​fishers_exact_pvalue
 
 ### Accessing Data
 
@@ -278,20 +276,21 @@ smoking_out
 ```
 
     ## # A tibble: 78 × 11
-    ##    .id          .placebo .type    .outcome .predictors .synthetic_cont… .unit_weights
-    ##    <chr>           <dbl> <chr>    <list>   <list>      <list>           <list>       
-    ##  1 California          0 treated  <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  2 California          0 controls <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  3 Rhode Island        1 treated  <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  4 Rhode Island        1 controls <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  5 Tennessee           1 treated  <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  6 Tennessee           1 controls <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  7 Indiana             1 treated  <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  8 Indiana             1 controls <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ##  9 Nevada              1 treated  <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ## 10 Nevada              1 controls <tibble… <tibble [7… <tibble [31 × 3… <tibble [38 …
-    ## # … with 68 more rows, and 4 more variables: .predictor_weights <list>,
-    ## #   .original_data <list>, .meta <list>, .loss <list>
+    ##    .id       .plac…¹ .type .outcome .predi…² .synth…³ .unit_…⁴ .predi…⁵ .origi…⁶
+    ##    <chr>       <dbl> <chr> <list>   <list>   <list>   <list>   <list>   <list>  
+    ##  1 Californ…       0 trea… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  2 Californ…       0 cont… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  3 Alabama         1 trea… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  4 Alabama         1 cont… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  5 Arkansas        1 trea… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  6 Arkansas        1 cont… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  7 Colorado        1 trea… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  8 Colorado        1 cont… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ##  9 Connecti…       1 trea… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ## 10 Connecti…       1 cont… <tibble> <tibble> <tibble> <tibble> <tibble> <tibble>
+    ## # … with 68 more rows, 2 more variables: .meta <list>, .loss <list>, and
+    ## #   abbreviated variable names ¹​.placebo, ²​.predictors, ³​.synthetic_control,
+    ## #   ⁴​.unit_weights, ⁵​.predictor_weights, ⁶​.original_data
 
 To access the relevant data fields, the `grab_` prefix functions come
 into play.
@@ -314,16 +313,16 @@ smoking_out %>% grab_synthetic_control()
     ## # A tibble: 31 × 3
     ##    time_unit real_y synth_y
     ##        <dbl>  <dbl>   <dbl>
-    ##  1      1970   123     116.
-    ##  2      1971   121     118.
-    ##  3      1972   124.    123.
-    ##  4      1973   124.    124.
-    ##  5      1974   127.    126.
+    ##  1      1970   123     117.
+    ##  2      1971   121     119.
+    ##  3      1972   124.    124.
+    ##  4      1973   124.    125.
+    ##  5      1974   127.    127.
     ##  6      1975   127.    127.
-    ##  7      1976   128     127.
-    ##  8      1977   126.    125.
+    ##  7      1976   128     128.
+    ##  8      1977   126.    126.
     ##  9      1978   126.    125.
-    ## 10      1979   122.    122.
+    ## 10      1979   122.    123.
     ## # … with 21 more rows
 
 Note that most all the `grab_` functions allow for extraction of the
@@ -336,16 +335,16 @@ smoking_out %>% grab_synthetic_control(placebo = T)
     ## # A tibble: 1,209 × 5
     ##    .id        .placebo time_unit real_y synth_y
     ##    <chr>         <dbl>     <dbl>  <dbl>   <dbl>
-    ##  1 California        0      1970   123     116.
-    ##  2 California        0      1971   121     118.
-    ##  3 California        0      1972   124.    123.
-    ##  4 California        0      1973   124.    124.
-    ##  5 California        0      1974   127.    126.
+    ##  1 California        0      1970   123     117.
+    ##  2 California        0      1971   121     119.
+    ##  3 California        0      1972   124.    124.
+    ##  4 California        0      1973   124.    125.
+    ##  5 California        0      1974   127.    127.
     ##  6 California        0      1975   127.    127.
-    ##  7 California        0      1976   128     127.
-    ##  8 California        0      1977   126.    125.
+    ##  7 California        0      1976   128     128.
+    ##  8 California        0      1977   126.    126.
     ##  9 California        0      1978   126.    125.
-    ## 10 California        0      1979   122.    122.
+    ## 10 California        0      1979   122.    123.
     ## # … with 1,199 more rows
 
 #### But say I really want to `unnest()`…
@@ -363,29 +362,29 @@ smoking_out %>%
 ```
 
     ## # A tibble: 1,482 × 50
-    ##    .id        .placebo .type time_unit California `Rhode Island` Tennessee Indiana
-    ##    <chr>         <dbl> <chr>     <dbl>      <dbl>          <dbl>     <dbl>   <dbl>
-    ##  1 California        0 trea…      1970       123              NA        NA      NA
-    ##  2 California        0 trea…      1971       121              NA        NA      NA
-    ##  3 California        0 trea…      1972       124.             NA        NA      NA
-    ##  4 California        0 trea…      1973       124.             NA        NA      NA
-    ##  5 California        0 trea…      1974       127.             NA        NA      NA
-    ##  6 California        0 trea…      1975       127.             NA        NA      NA
-    ##  7 California        0 trea…      1976       128              NA        NA      NA
-    ##  8 California        0 trea…      1977       126.             NA        NA      NA
-    ##  9 California        0 trea…      1978       126.             NA        NA      NA
-    ## 10 California        0 trea…      1979       122.             NA        NA      NA
-    ## # … with 1,472 more rows, and 42 more variables: Nevada <dbl>, Louisiana <dbl>,
-    ## #   Oklahoma <dbl>, New Hampshire <dbl>, North Dakota <dbl>, Arkansas <dbl>,
-    ## #   Virginia <dbl>, Illinois <dbl>, South Dakota <dbl>, Utah <dbl>,
-    ## #   Georgia <dbl>, Mississippi <dbl>, Colorado <dbl>, Minnesota <dbl>,
-    ## #   Texas <dbl>, Kentucky <dbl>, Maine <dbl>, North Carolina <dbl>,
-    ## #   Montana <dbl>, Vermont <dbl>, Iowa <dbl>, Connecticut <dbl>, Kansas <dbl>,
-    ## #   Delaware <dbl>, Wisconsin <dbl>, Idaho <dbl>, New Mexico <dbl>, …
+    ##    .id     .plac…¹ .type time_…² Calif…³ Alabama Arkan…⁴ Color…⁵ Conne…⁶ Delaw…⁷
+    ##    <chr>     <dbl> <chr>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
+    ##  1 Califo…       0 trea…    1970    123       NA      NA      NA      NA      NA
+    ##  2 Califo…       0 trea…    1971    121       NA      NA      NA      NA      NA
+    ##  3 Califo…       0 trea…    1972    124.      NA      NA      NA      NA      NA
+    ##  4 Califo…       0 trea…    1973    124.      NA      NA      NA      NA      NA
+    ##  5 Califo…       0 trea…    1974    127.      NA      NA      NA      NA      NA
+    ##  6 Califo…       0 trea…    1975    127.      NA      NA      NA      NA      NA
+    ##  7 Califo…       0 trea…    1976    128       NA      NA      NA      NA      NA
+    ##  8 Califo…       0 trea…    1977    126.      NA      NA      NA      NA      NA
+    ##  9 Califo…       0 trea…    1978    126.      NA      NA      NA      NA      NA
+    ## 10 Califo…       0 trea…    1979    122.      NA      NA      NA      NA      NA
+    ## # … with 1,472 more rows, 40 more variables: Georgia <dbl>, Idaho <dbl>,
+    ## #   Illinois <dbl>, Indiana <dbl>, Iowa <dbl>, Kansas <dbl>, Kentucky <dbl>,
+    ## #   Louisiana <dbl>, Maine <dbl>, Minnesota <dbl>, Mississippi <dbl>,
+    ## #   Missouri <dbl>, Montana <dbl>, Nebraska <dbl>, Nevada <dbl>,
+    ## #   `New Hampshire` <dbl>, `New Mexico` <dbl>, `North Carolina` <dbl>,
+    ## #   `North Dakota` <dbl>, Ohio <dbl>, Oklahoma <dbl>, Pennsylvania <dbl>,
+    ## #   `Rhode Island` <dbl>, `South Carolina` <dbl>, `South Dakota` <dbl>, …
 
 ## Debugging
 
 Spot an issue? Please let me know by posting an issue.
 
-[1] Note this implies that you’d need at least 20 cases in the donor
-pool to get a conventional p-value (.05).
+[^1]: Note this implies that you’d need at least 20 cases in the donor
+    pool to get a conventional p-value (.05).
